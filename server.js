@@ -319,8 +319,7 @@ async function sendTelegramReply(chatId, text) {
   await axios.post(url, { chat_id: chatId, text });
 }
 
-async function processTelegramCommand(chatId, text) {
-  const db = readDb();
+async function processTelegramCommand(db, chatId, text) {
   const parts = text.trim().split(/\s+/);
   const command = (parts[0] || "").toLowerCase();
   let changed = false;
@@ -383,10 +382,12 @@ async function processTelegramCommand(chatId, text) {
   }
 
   if (changed) {
-    writeDb(db);
     sessions.clear();
-    return sendTelegramReply(chatId, "Berhasil diupdate ✅");
+    await sendTelegramReply(chatId, "Berhasil diupdate ✅");
+    return true;
   }
+
+  return false;
 }
 
 async function pollTelegramUpdates() {
@@ -409,6 +410,7 @@ async function pollTelegramUpdates() {
     });
 
     const updates = res.data?.result || [];
+    let hasConfigChanges = false;
     for (const update of updates) {
       db.telegram.lastUpdateId = update.update_id;
       const msg = update.message;
@@ -421,12 +423,13 @@ async function pollTelegramUpdates() {
       }
 
       logTelegram("update accepted", `chat_id=${chatId} text=${msg.text}`);
-      await processTelegramCommand(chatId, msg.text);
+      const changed = await processTelegramCommand(db, chatId, msg.text);
+      if (changed) hasConfigChanges = true;
     }
 
-    if (updates.length) {
+    if (updates.length || hasConfigChanges) {
       writeDb(db);
-      logTelegram("poll processed", `updates=${updates.length}`);
+      logTelegram("poll processed", `updates=${updates.length} changes=${hasConfigChanges}`);
     }
   } catch (error) {
     logTelegram("poll error", error.message);
