@@ -85,6 +85,28 @@ function getTelegramChatIds() {
     .filter(Boolean);
 }
 
+
+async function getTelegramStatus() {
+  const token = getTelegramBotToken();
+  const chatIds = getTelegramChatIds();
+  if (!token || !chatIds.length) {
+    return { configured: false, connected: false, chatIdsCount: chatIds.length };
+  }
+
+  try {
+    const url = `https://api.telegram.org/bot${token}/getMe`;
+    const res = await axios.get(url);
+    return {
+      configured: true,
+      connected: Boolean(res.data?.ok),
+      chatIdsCount: chatIds.length,
+      botUsername: res.data?.result?.username || null
+    };
+  } catch {
+    return { configured: true, connected: false, chatIdsCount: chatIds.length };
+  }
+}
+
 function getUsers(db) {
   return [
     { username: db.credentials.me.username, password: db.credentials.me.password, role: "me" },
@@ -149,6 +171,12 @@ app.get("/api/data", authMiddleware, (req, res) => {
       partner: db.credentials.partner.username
     }
   });
+});
+
+
+app.get("/api/telegram-status", authMiddleware, async (_, res) => {
+  const status = await getTelegramStatus();
+  res.json(status);
 });
 
 app.put("/api/settings", authMiddleware, (req, res) => {

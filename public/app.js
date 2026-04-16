@@ -1,5 +1,5 @@
 const app = document.getElementById("app");
-let state = { me: null, data: null, flameOn: true, online: [] };
+let state = { me: null, data: null, flameOn: true, online: [], telegramStatus: null };
 
 function nextAnnual(dateStr) {
   const d = new Date(dateStr);
@@ -32,6 +32,15 @@ async function api(url, method = "GET", body, isForm = false) {
   });
   if (!res.ok) throw new Error((await res.json()).error || "Gagal");
   return res.json();
+}
+
+
+function renderTelegramBadge() {
+  const st = state.telegramStatus;
+  if (!st) return "🤖 Status bot: mengecek...";
+  if (!st.configured) return "⚠️ Bot belum aktif (cek TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_IDS)";
+  if (!st.connected) return `⚠️ Bot terkonfigurasi tapi belum terhubung (${st.chatIdsCount} chat id)`;
+  return `✅ Bot siap digunakan (@${st.botUsername || "telegram_bot"}) untuk ${st.chatIdsCount} chat id`;
 }
 
 function renderLogin(err = "") {
@@ -78,6 +87,7 @@ function renderDashboard() {
     <div class="container">
       <div class="card">
         <h1>Hai, ${state.me.username} 💖</h1>
+        <p class="small" id="telegramBadge">${renderTelegramBadge()}</p>
         <button class="secondary" id="logout">Logout</button>
       </div>
       <div class="card grid">
@@ -96,19 +106,7 @@ function renderDashboard() {
         <div class="silhouette">${otherOnline ? `🧍‍♀️ ${other} lagi lihat kamu!` : `...${other} belum online`}</div>
       </div>` : ""}
 
-      <div class="card">
-        <h2>Pengaturan Cinta ⚙️</h2>
-        <div class="grid">
-          <div><input id="relationshipStart" type="date" value="${s.relationshipStart}" /></div>
-          <div><input id="anniversaryDate" type="date" value="${s.anniversaryDate}" /></div>
-          <div><input id="myBirthday" type="date" value="${s.myBirthday}" /></div>
-          <div><input id="partnerBirthday" type="date" value="${s.partnerBirthday}" /></div>
-          <div><input id="meName" value="${s.meName}" placeholder="Nama kamu"/></div>
-          <div><input id="partnerName" value="${s.partnerName}" placeholder="Nama pasangan"/></div>
-        </div>
-        <button id="saveSettings">Simpan Pengaturan</button>
-        <p class="small">Notifikasi/backup Telegram diatur dari ENV + command Telegram (/setanniv, /setultah, /setname, /setuser, /setpass).</p>
-      </div>
+      <div class="card"><h2>Pengaturan Cinta via Telegram ⚙️</h2><p class="small">Semua pengaturan sekarang hanya lewat Telegram command: /setanniv, /setultah, /setname, /setuser, /setpass, /cekconfig.</p></div>
 
       <div class="card">
         <h2>Timeline Library 📸</h2>
@@ -134,13 +132,6 @@ function renderDashboard() {
     };
   }
 
-  document.getElementById("saveSettings").onclick = async () => {
-    const payload = ["relationshipStart", "anniversaryDate", "myBirthday", "partnerBirthday", "meName", "partnerName"]
-      .reduce((a, id) => ((a[id] = document.getElementById(id).value), a), {});
-    await api("/api/settings", "PUT", payload);
-    await loadData();
-    renderDashboard();
-  };
 
   document.getElementById("addTimeline").onclick = async () => {
     const form = new FormData();
@@ -179,6 +170,7 @@ function renderDashboard() {
 
 async function loadData() {
   state.data = await api("/api/data");
+  state.telegramStatus = await api("/api/telegram-status");
 }
 
 async function bootstrap() {
