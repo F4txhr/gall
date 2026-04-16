@@ -1,0 +1,49 @@
+:root {
+  --pink: #ff4fa3;
+  --rose: #ffd9eb;
+  --dark: #2e1e2f;
+  --card: rgba(255,255,255,.72);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Poppins", system-ui, sans-serif;
+  background: radial-gradient(circle at top, #ffe9f4, #ffd5ea 45%, #f8c9ff);
+  color: var(--dark);
+  min-height: 100vh;
+}
+.container { max-width: 1050px; margin: 24px auto; padding: 0 16px 40px; }
+.card {
+  background: var(--card);
+  backdrop-filter: blur(6px);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(199, 61, 141, 0.15);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+h1,h2,h3 { margin-top: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.counter { font-size: 1.1rem; padding: 14px; border-radius: 14px; background: #fff6fb; }
+input, button, textarea {
+  width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid #f2c6df; margin-bottom: 8px;
+}
+button {
+  background: linear-gradient(120deg, #ff73ba, #ff4fa3);
+  border: none; color: #fff; font-weight: 600; cursor: pointer;
+}
+button.secondary { background: #fff; color: var(--pink); border: 1px solid var(--pink); }
+.timeline-item { display: grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 10px; border-radius: 12px; background: #fff8fc; margin-bottom: 10px; }
+.timeline-item img { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; }
+.tag { display: inline-block; font-size: 12px; background: #ffd8ea; border-radius: 999px; padding: 4px 8px; margin-right: 6px; }
+.auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.auth-card { width: min(420px, 95vw); }
+.cake {
+  position: relative; width: 220px; margin: 8px auto 14px; height: 180px;
+}
+.layer { position: absolute; bottom: 20px; width: 220px; height: 90px; border-radius: 16px; background: #ffb3d9; }
+.candle { position: absolute; left: calc(50% - 10px); bottom: 110px; width: 20px; height: 45px; border-radius: 8px; background: repeating-linear-gradient(45deg,#fff,#fff 6px,#ff94c9 6px,#ff94c9 12px); }
+.flame { position: absolute; left: 50%; transform: translateX(-50%); bottom: 155px; width: 18px; height: 28px; background: radial-gradient(circle at 40% 30%, #fff4aa, #ffb000); border-radius: 50% 50% 60% 60%; animation: flicker 1.2s infinite; }
+.flame.off { opacity: 0; }
+@keyframes flicker { 50% { transform: translateX(-50%) scale(1.1); } }
+.silhouette { font-size: 34px; text-align: center; }
+.small { font-size: 12px; opacity: .8; }
