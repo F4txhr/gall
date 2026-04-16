@@ -71,8 +71,8 @@ function renderDashboard() {
 
   const todayCake = isSpecialDay(s.myBirthday) || isSpecialDay(s.partnerBirthday) || isSpecialDay(s.anniversaryDate);
   const other = state.me.role === "me" ? s.partnerName : s.meName;
-  const otherUser = state.me.role === "me" ? "partner" : "me";
-  const otherOnline = state.online.includes(otherUser === "me" ? "aku" : "dia") || state.online.length > 1;
+  const otherRole = state.me.role === "me" ? "partner" : "me";
+  const otherOnline = state.online.includes(otherRole);
 
   app.innerHTML = `
     <div class="container">
@@ -105,11 +105,9 @@ function renderDashboard() {
           <div><input id="partnerBirthday" type="date" value="${s.partnerBirthday}" /></div>
           <div><input id="meName" value="${s.meName}" placeholder="Nama kamu"/></div>
           <div><input id="partnerName" value="${s.partnerName}" placeholder="Nama pasangan"/></div>
-          <div><input id="telegramBotToken" value="${s.telegramBotToken}" placeholder="Telegram Bot Token"/></div>
-          <div><input id="telegramChatId" value="${s.telegramChatId}" placeholder="Telegram Chat ID"/></div>
         </div>
         <button id="saveSettings">Simpan Pengaturan</button>
-        <p class="small">Notifikasi anniv/ultah + backup media upload ke Telegram aktif jika bot token & chat id terisi.</p>
+        <p class="small">Notifikasi/backup Telegram diatur dari ENV + command Telegram (/setanniv, /setultah, /setname, /setuser, /setpass).</p>
       </div>
 
       <div class="card">
@@ -137,7 +135,7 @@ function renderDashboard() {
   }
 
   document.getElementById("saveSettings").onclick = async () => {
-    const payload = ["relationshipStart", "anniversaryDate", "myBirthday", "partnerBirthday", "telegramBotToken", "telegramChatId", "meName", "partnerName"]
+    const payload = ["relationshipStart", "anniversaryDate", "myBirthday", "partnerBirthday", "meName", "partnerName"]
       .reduce((a, id) => ((a[id] = document.getElementById(id).value), a), {});
     await api("/api/settings", "PUT", payload);
     await loadData();

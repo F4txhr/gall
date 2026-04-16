@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const cron = require("node-cron");
 const axios = require("axios");
 const { Server } = require("socket.io");
+const FormData = require("form-data");
 
 const app = express();
 const server = http.createServer(app);
@@ -28,13 +29,24 @@ const defaultDb = {
     anniversaryDate: "2025-01-01",
     myBirthday: "1999-01-01",
     partnerBirthday: "1999-01-01",
-    telegramBotToken: "",
-    telegramChatId: "",
     meName: "Aku",
-    partnerName: "Dia"
+    partnerName: "Kamu"
+  },
+  credentials: {
+    me: {
+      username: process.env.ME_USER || "aku",
+      password: process.env.ME_PASS || "sayang123"
+    },
+    partner: {
+      username: process.env.PARTNER_USER || "kamu",
+      password: process.env.PARTNER_PASS || "bucin123"
+    }
   },
   timeline: [],
-  sentReminders: {}
+  sentReminders: {},
+  telegram: {
+    lastUpdateId: 0
+  }
 };
 
 function readDb() {
@@ -43,7 +55,16 @@ function readDb() {
     return structuredClone(defaultDb);
   }
   try {
-    return JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+    const db = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+    db.settings = { ...defaultDb.settings, ...(db.settings || {}) };
+    db.credentials = {
+      me: { ...defaultDb.credentials.me, ...(db.credentials?.me || {}) },
+      partner: { ...defaultDb.credentials.partner, ...(db.credentials?.partner || {}) }
+    };
+    db.timeline = db.timeline || [];
+    db.sentReminders = db.sentReminders || {};
+    db.telegram = { ...defaultDb.telegram, ...(db.telegram || {}) };
+    return db;
   } catch {
     return structuredClone(defaultDb);
   }
@@ -53,13 +74,26 @@ function writeDb(db) {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
 
-const USERS = [
-  { username: process.env.ME_USER || "aku", password: process.env.ME_PASS || "sayang123", role: "me" },
-  { username: process.env.PARTNER_USER || "dia", password: process.env.PARTNER_PASS || "bucin123", role: "partner" }
-];
+function getTelegramBotToken() {
+  return process.env.TELEGRAM_BOT_TOKEN || "";
+}
+
+function getTelegramChatIds() {
+  return (process.env.TELEGRAM_CHAT_IDS || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function getUsers(db) {
+  return [
+    { username: db.credentials.me.username, password: db.credentials.me.password, role: "me" },
+    { username: db.credentials.partner.username, password: db.credentials.partner.password, role: "partner" }
+  ];
+}
 
 const sessions = new Map();
-const onlineUsers = new Set();
+const onlineRoles = new Set();
 
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, UPLOAD_DIR),
@@ -84,7 +118,8 @@ function authMiddleware(req, res, next) {
 
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
-  const user = USERS.find((u) => u.username === username && u.password === password);
+  const db = readDb();
+  const user = getUsers(db).find((u) => u.username === username && u.password === password);
   if (!user) return res.status(401).json({ error: "Username/password salah" });
 
   const token = crypto.randomBytes(24).toString("hex");
@@ -106,12 +141,27 @@ app.get("/api/me", authMiddleware, (req, res) => {
 
 app.get("/api/data", authMiddleware, (req, res) => {
   const db = readDb();
-  res.json(db);
+  res.json({
+    settings: db.settings,
+    timeline: db.timeline,
+    usernames: {
+      me: db.credentials.me.username,
+      partner: db.credentials.partner.username
+    }
+  });
 });
 
 app.put("/api/settings", authMiddleware, (req, res) => {
   const db = readDb();
-  db.settings = { ...db.settings, ...req.body };
+  db.settings = {
+    ...db.settings,
+    relationshipStart: req.body.relationshipStart || db.settings.relationshipStart,
+    anniversaryDate: req.body.anniversaryDate || db.settings.anniversaryDate,
+    myBirthday: req.body.myBirthday || db.settings.myBirthday,
+    partnerBirthday: req.body.partnerBirthday || db.settings.partnerBirthday,
+    meName: req.body.meName || db.settings.meName,
+    partnerName: req.body.partnerName || db.settings.partnerName
+  };
   writeDb(db);
   res.json(db.settings);
 });
@@ -130,7 +180,7 @@ app.post("/api/timeline", authMiddleware, upload.single("photo"), async (req, re
   db.timeline.unshift(item);
   writeDb(db);
 
-  await backupToTelegram(db.settings, item, req.file?.path);
+  await backupToTelegram(item, req.file?.path);
   res.json(item);
 });
 
@@ -147,26 +197,166 @@ app.delete("/api/timeline/:id", authMiddleware, (req, res) => {
   res.json({ ok: true });
 });
 
-async function sendTelegramMessage(settings, text) {
-  if (!settings.telegramBotToken || !settings.telegramChatId) return;
-  const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendMessage`;
-  await axios.post(url, { chat_id: settings.telegramChatId, text });
-}
-
-async function backupToTelegram(settings, item, filePath) {
-  if (!settings.telegramBotToken || !settings.telegramChatId || !filePath) return;
-  const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendDocument`;
-  const FormData = require("form-data");
-  const form = new FormData();
-  form.append("chat_id", settings.telegramChatId);
-  form.append("caption", `Backup media baru: ${item.title} (${item.takenAt || "tanpa tanggal"})`);
-  form.append("document", fs.createReadStream(filePath));
-  await axios.post(url, form, { headers: form.getHeaders() });
-}
-
 function isMonthDay(dateStr, now) {
   const d = new Date(dateStr);
   return d.getUTCDate() === now.getUTCDate() && d.getUTCMonth() === now.getUTCMonth();
+}
+
+async function sendTelegramToAll(text) {
+  const token = getTelegramBotToken();
+  const chatIds = getTelegramChatIds();
+  if (!token || !chatIds.length) return;
+
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  for (const chatId of chatIds) {
+    await axios.post(url, { chat_id: chatId, text });
+  }
+}
+
+async function backupToTelegram(item, filePath) {
+  const token = getTelegramBotToken();
+  const chatIds = getTelegramChatIds();
+  if (!token || !chatIds.length || !filePath) return;
+
+  const url = `https://api.telegram.org/bot${token}/sendDocument`;
+  for (const chatId of chatIds) {
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("caption", `Backup media baru: ${item.title} (${item.takenAt || "tanpa tanggal"})`);
+    form.append("document", fs.createReadStream(filePath));
+    await axios.post(url, form, { headers: form.getHeaders() });
+  }
+}
+
+function isValidDate(str) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(str) && !Number.isNaN(new Date(str).getTime());
+}
+
+function telegramHelpText() {
+  return [
+    "Perintah yang tersedia:",
+    "/setanniv YYYY-MM-DD",
+    "/setultah aku YYYY-MM-DD",
+    "/setultah kamu YYYY-MM-DD",
+    "/setname aku Nama Baru",
+    "/setname kamu Nama Baru",
+    "/setuser aku usernameBaru",
+    "/setuser kamu usernameBaru",
+    "/setpass aku passwordBaru",
+    "/setpass kamu passwordBaru",
+    "/cekconfig"
+  ].join("\n");
+}
+
+async function sendTelegramReply(chatId, text) {
+  const token = getTelegramBotToken();
+  if (!token) return;
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  await axios.post(url, { chat_id: chatId, text });
+}
+
+async function processTelegramCommand(chatId, text) {
+  const db = readDb();
+  const parts = text.trim().split(/\s+/);
+  const command = (parts[0] || "").toLowerCase();
+  let changed = false;
+
+  if (command === "/setanniv") {
+    if (!isValidDate(parts[1])) return sendTelegramReply(chatId, "Format salah. Contoh: /setanniv 2026-07-15");
+    db.settings.anniversaryDate = parts[1];
+    changed = true;
+  } else if (command === "/setultah") {
+    const who = (parts[1] || "").toLowerCase();
+    const date = parts[2];
+    if (!["aku", "kamu"].includes(who) || !isValidDate(date)) {
+      return sendTelegramReply(chatId, "Format salah. Contoh: /setultah aku 2026-10-21");
+    }
+    if (who === "aku") db.settings.myBirthday = date;
+    if (who === "kamu") db.settings.partnerBirthday = date;
+    changed = true;
+  } else if (command === "/setname") {
+    const who = (parts[1] || "").toLowerCase();
+    const name = parts.slice(2).join(" ").trim();
+    if (!["aku", "kamu"].includes(who) || !name) {
+      return sendTelegramReply(chatId, "Format salah. Contoh: /setname aku Sayangku");
+    }
+    if (who === "aku") db.settings.meName = name;
+    if (who === "kamu") db.settings.partnerName = name;
+    changed = true;
+  } else if (command === "/setuser") {
+    const who = (parts[1] || "").toLowerCase();
+    const username = (parts[2] || "").trim();
+    if (!["aku", "kamu"].includes(who) || !username) {
+      return sendTelegramReply(chatId, "Format salah. Contoh: /setuser aku namauserbaru");
+    }
+    if (who === "aku") db.credentials.me.username = username;
+    if (who === "kamu") db.credentials.partner.username = username;
+    changed = true;
+  } else if (command === "/setpass") {
+    const who = (parts[1] || "").toLowerCase();
+    const password = parts.slice(2).join(" ").trim();
+    if (!["aku", "kamu"].includes(who) || !password) {
+      return sendTelegramReply(chatId, "Format salah. Contoh: /setpass aku passwordBaru");
+    }
+    if (who === "aku") db.credentials.me.password = password;
+    if (who === "kamu") db.credentials.partner.password = password;
+    changed = true;
+  } else if (command === "/cekconfig") {
+    return sendTelegramReply(
+      chatId,
+      [
+        `Anniv: ${db.settings.anniversaryDate}`,
+        `Ultah aku: ${db.settings.myBirthday}`,
+        `Ultah kamu: ${db.settings.partnerBirthday}`,
+        `Nama aku: ${db.settings.meName}`,
+        `Nama kamu: ${db.settings.partnerName}`,
+        `User aku: ${db.credentials.me.username}`,
+        `User kamu: ${db.credentials.partner.username}`
+      ].join("\n")
+    );
+  } else {
+    return sendTelegramReply(chatId, telegramHelpText());
+  }
+
+  if (changed) {
+    writeDb(db);
+    sessions.clear();
+    return sendTelegramReply(chatId, "Berhasil diupdate ✅");
+  }
+}
+
+async function pollTelegramUpdates() {
+  const token = getTelegramBotToken();
+  const allowedChatIds = getTelegramChatIds();
+  if (!token || !allowedChatIds.length) return;
+
+  const db = readDb();
+  const url = `https://api.telegram.org/bot${token}/getUpdates`;
+
+  try {
+    const res = await axios.get(url, {
+      params: {
+        timeout: 0,
+        offset: db.telegram.lastUpdateId + 1
+      }
+    });
+
+    const updates = res.data?.result || [];
+    for (const update of updates) {
+      db.telegram.lastUpdateId = update.update_id;
+      const msg = update.message;
+      if (!msg?.text || !msg?.chat?.id) continue;
+
+      const chatId = String(msg.chat.id);
+      if (!allowedChatIds.includes(chatId)) continue;
+
+      await processTelegramCommand(chatId, msg.text);
+    }
+
+    if (updates.length) writeDb(db);
+  } catch (error) {
+    console.error("pollTelegramUpdates error", error.message);
+  }
 }
 
 cron.schedule("0 * * * *", async () => {
@@ -181,18 +371,22 @@ cron.schedule("0 * * * *", async () => {
   if (isMonthDay(db.settings.myBirthday, now)) msgs.push(`Selamat ulang tahun ${db.settings.meName}! 🎂`);
   if (isMonthDay(db.settings.partnerBirthday, now)) msgs.push(`Selamat ulang tahun ${db.settings.partnerName}! 🎂`);
 
-  if (msgs.length) {
-    for (const msg of msgs) {
-      try {
-        await sendTelegramMessage(db.settings, msg);
-      } catch (e) {
-        console.error("Telegram error", e.message);
-      }
+  if (!msgs.length) return;
+
+  for (const msg of msgs) {
+    try {
+      await sendTelegramToAll(msg);
+    } catch (e) {
+      console.error("Telegram reminder error", e.message);
     }
-    db.sentReminders[todayKey] = msgs;
-    writeDb(db);
   }
+
+  db.sentReminders[todayKey] = msgs;
+  writeDb(db);
 });
+
+setInterval(pollTelegramUpdates, 15000);
+pollTelegramUpdates();
 
 io.use((socket, next) => {
   const cookieHeader = socket.handshake.headers.cookie || "";
@@ -208,19 +402,19 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  onlineUsers.add(socket.user.username);
-  io.emit("presence", Array.from(onlineUsers));
+  onlineRoles.add(socket.user.role);
+  io.emit("presence", Array.from(onlineRoles));
 
   socket.on("disconnect", () => {
     let stillOnline = false;
     for (const [id, s] of io.of("/").sockets) {
-      if (id !== socket.id && s.user.username === socket.user.username) {
+      if (id !== socket.id && s.user.role === socket.user.role) {
         stillOnline = true;
         break;
       }
     }
-    if (!stillOnline) onlineUsers.delete(socket.user.username);
-    io.emit("presence", Array.from(onlineUsers));
+    if (!stillOnline) onlineRoles.delete(socket.user.role);
+    io.emit("presence", Array.from(onlineRoles));
   });
 });
 
