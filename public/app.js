@@ -74,12 +74,16 @@ function isSpecialDay(dateStr) {
 function renderDashboard() {
   const s = state.data.settings;
   const anniv = diffToText(nextAnnual(s.anniversaryDate));
-  const myB = diffToText(nextAnnual(s.myBirthday));
-  const partnerB = diffToText(nextAnnual(s.partnerBirthday));
+  const ownBirthday = state.me.role === "me" ? s.myBirthday : s.partnerBirthday;
+  const partnerBirthday = state.me.role === "me" ? s.partnerBirthday : s.myBirthday;
+  const ownName = state.me.role === "me" ? s.meName : s.partnerName;
+  const partnerName = state.me.role === "me" ? s.partnerName : s.meName;
+  const ownBirthdayCountdown = diffToText(nextAnnual(ownBirthday));
+  const partnerBirthdayCountdown = diffToText(nextAnnual(partnerBirthday));
   const relationDays = daysSince(s.relationshipStart);
 
   const todayCake = isSpecialDay(s.myBirthday) || isSpecialDay(s.partnerBirthday) || isSpecialDay(s.anniversaryDate);
-  const other = state.me.role === "me" ? s.partnerName : s.meName;
+  const other = partnerName;
   const otherRole = state.me.role === "me" ? "partner" : "me";
   const otherOnline = state.online.includes(otherRole);
 
@@ -93,8 +97,8 @@ function renderDashboard() {
       <div class="card grid">
         <div class="counter"><strong>Udah pacaran:</strong><br/>${relationDays} hari</div>
         <div class="counter"><strong>Countdown Anniversary:</strong><br/>${anniv}</div>
-        <div class="counter"><strong>Countdown Ulang Tahun Kamu:</strong><br/>${myB}</div>
-        <div class="counter"><strong>Countdown Ulang Tahun Pasangan:</strong><br/>${partnerB}</div>
+        <div class="counter"><strong>Countdown Ulang Tahun ${ownName}:</strong><br/>${ownBirthdayCountdown}</div>
+        <div class="counter"><strong>Countdown Ulang Tahun ${partnerName}:</strong><br/>${partnerBirthdayCountdown}</div>
       </div>
 
       ${todayCake ? `
