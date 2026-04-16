@@ -19,9 +19,16 @@ function diffToText(target) {
 }
 
 function daysSince(start) {
-  const s = new Date(start);
+  return Math.floor((new Date() - new Date(start)) / (1000 * 60 * 60 * 24));
+}
+
+function calcAge(dateStr) {
+  const birth = new Date(dateStr);
   const now = new Date();
-  return Math.floor((now - s) / (1000 * 60 * 60 * 24));
+  let age = now.getUTCFullYear() - birth.getUTCFullYear();
+  const m = now.getUTCMonth() - birth.getUTCMonth();
+  if (m < 0 || (m === 0 && now.getUTCDate() < birth.getUTCDate())) age--;
+  return age;
 }
 
 async function api(url, method = "GET", body, isForm = false) {
@@ -34,21 +41,23 @@ async function api(url, method = "GET", body, isForm = false) {
   return res.json();
 }
 
-
 function renderTelegramBadge() {
   const st = state.telegramStatus;
   if (!st) return "🤖 Status bot: mengecek...";
-  if (!st.configured) return "⚠️ Bot belum aktif (cek TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_IDS)";
-  if (!st.connected) return `⚠️ Bot terkonfigurasi tapi belum terhubung (${st.chatIdsCount} chat id)${st.error ? ` | ${st.error}` : ""}`;
-  return `✅ Bot siap digunakan (@${st.botUsername || "telegram_bot"}) untuk ${st.chatIdsCount} chat id`;
+  if (!st.configured) return "⚠️ Bot belum aktif";
+  if (!st.connected) return `⚠️ Bot belum terhubung${st.error ? ` (${st.error})` : ""}`;
+  return `✅ Bot siap @${st.botUsername || "telegram_bot"}`;
+}
+
+function makeHearts() {
+  return Array.from({ length: 12 }).map((_, i) => `<span class="heart" style="--i:${i + 1}">❤</span>`).join("");
 }
 
 function renderLogin(err = "") {
   app.innerHTML = `
     <div class="auth-wrap">
       <div class="card auth-card">
-        <h2>Masuk ke Web Bucin 💘</h2>
-        <p class="small">Beda akses untuk kamu dan pasanganmu.</p>
+        <h2>Masuk ke Cinta Kita 💘</h2>
         ${err ? `<p style="color:#d1005f">${err}</p>` : ""}
         <input id="u" placeholder="username" />
         <input id="p" placeholder="password" type="password" />
@@ -71,6 +80,41 @@ function isSpecialDay(dateStr) {
   return d.getUTCDate() === n.getUTCDate() && d.getUTCMonth() === n.getUTCMonth();
 }
 
+async function attachMicBlow() {
+  const btn = document.getElementById("micBlow");
+  if (!btn) return;
+  btn.onclick = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const ctx = new AudioContext();
+      const src = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      src.connect(analyser);
+      const arr = new Uint8Array(analyser.frequencyBinCount);
+      btn.textContent = "Mendengarkan hembusan...";
+
+      const timer = setInterval(() => {
+        analyser.getByteFrequencyData(arr);
+        const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+        if (avg > 50) {
+          clearInterval(timer);
+          stream.getTracks().forEach(t => t.stop());
+          state.flameOn = false;
+          renderDashboard();
+        }
+      }, 180);
+
+      setTimeout(() => {
+        clearInterval(timer);
+        stream.getTracks().forEach(t => t.stop());
+      }, 12000);
+    } catch {
+      alert("Mikrofon tidak tersedia/ditolak.");
+    }
+  };
+}
+
 function renderDashboard() {
   const s = state.data.settings;
   const anniv = diffToText(nextAnnual(s.anniversaryDate));
@@ -83,52 +127,76 @@ function renderDashboard() {
   const relationDays = daysSince(s.relationshipStart);
   const simMode = state.data.simulation?.mode || "off";
   const isSimulated = simMode === "ultah" || simMode === "anniv";
-
   const todayCake = isSimulated || isSpecialDay(s.myBirthday) || isSpecialDay(s.partnerBirthday) || isSpecialDay(s.anniversaryDate);
-  const other = partnerName;
-  const otherRole = state.me.role === "me" ? "partner" : "me";
-  const otherOnline = state.online.includes(otherRole);
+  const otherOnline = state.online.includes(state.me.role === "me" ? "partner" : "me");
 
   app.innerHTML = `
-    <div class="container">
-      <div class="card hero">
+    <div class="floating-hearts">${makeHearts()}</div>
+    <div class="container long-scroll">
+      <section class="card hero">
         <div>
-          <h1>Hai, ${state.me.username} 💖</h1>
-          <p class="small">Dashboard cinta yang lebih clean, smooth, dan modern.</p>
+          <h1>Cinta Kita</h1>
+          <p class="small">Antarmuka romantis, modern, lembut, dan smooth ✨</p>
+        </div>
+        <div class="couple-pics">
+          <div class="avatar">${s.meName[0] || "A"}</div>
+          <div class="avatar">${s.partnerName[0] || "K"}</div>
         </div>
         <div class="badges">
           <span class="badge" id="telegramBadge">${renderTelegramBadge()}</span>
-          ${isSimulated ? `<span class="badge">🧪 Simulasi: <strong>${simMode}</strong></span>` : ""}
+          ${isSimulated ? `<span class="badge">🧪 Simulasi: ${simMode}</span>` : ""}
         </div>
         <button class="secondary" id="logout">Logout</button>
-      </div>
-      <div class="card grid">
-        <div class="counter"><strong>Udah pacaran:</strong><br/>${relationDays} hari</div>
-        <div class="counter"><strong>Countdown Anniversary:</strong><br/>${anniv}</div>
-        <div class="counter"><strong>Countdown Ulang Tahun ${ownName}:</strong><br/>${ownBirthdayCountdown}</div>
-        <div class="counter"><strong>Countdown Ulang Tahun ${partnerName}:</strong><br/>${partnerBirthdayCountdown}</div>
-      </div>
+      </section>
 
-      ${todayCake ? `
-      <div class="card">
-        <h2>Momen Spesial Hari Ini 🎉</h2>
-        <div class="cake"><div class="layer"></div><div class="candle"></div><div class="flame ${state.flameOn ? "" : "off"}" id="flame"></div></div>
-        <button id="blow">Tiup Lilin 🕯️</button>
-        <p id="wish">${state.flameOn ? "Ayo tiup lilinnya dulu, sayang~" : "Selamat! Semoga cinta kalian makin manis selamanya 💞"}</p>
-        <div class="silhouette">${otherOnline ? `🧍‍♀️ ${other} lagi lihat kamu!` : `...${other} belum online`}</div>
-      </div>` : ""}
+      <section class="card feature-card">
+        <h2>Hari-hari Bersama</h2>
+        <p class="big-number">${relationDays.toLocaleString("id-ID")} Hari</p>
+        <p class="small">Countdown Anniversary: ${anniv}</p>
+      </section>
 
-      <div class="card"><h2>Pengaturan Cinta via Telegram ⚙️</h2><p class="small">Semua pengaturan sekarang hanya lewat Telegram command: /setanniv, /setultah, /setname, /setuser, /setpass, /sim ultah|anniv|off, /cekconfig.</p></div>
+      <section class="card feature-card">
+        <h2>Ulang Tahun ${partnerName}!</h2>
+        <p><strong>Tanggal:</strong> ${partnerBirthday}</p>
+        <p><strong>Usia:</strong> ${calcAge(partnerBirthday)} Tahun</p>
+        <p class="small">Countdown ${ownName}: ${ownBirthdayCountdown} • Countdown ${partnerName}: ${partnerBirthdayCountdown}</p>
+      </section>
 
-      <div class="card">
-        <h2>Timeline Library 📸</h2>
-        <input id="title" placeholder="Judul foto" />
-        <textarea id="description" placeholder="Deskripsi (opsional)"></textarea>
+      <section class="card">
+        <h2>Perjalanan Kita</h2>
+        <p class="small">Timeline foto vertikal: tanggal, lokasi, dan caption singkat.</p>
+        <input id="title" placeholder="Judul momen (contoh: Pertemuan Pertama di Jakarta!)" />
+        <input id="location" placeholder="Lokasi (opsional, contoh: Jakarta)" />
+        <textarea id="description" placeholder="Caption singkat (opsional)"></textarea>
         <input id="takenAt" type="date" />
         <input id="photo" type="file" accept="image/*" />
         <button id="addTimeline">Upload ke Timeline</button>
         <div id="timelineList"></div>
-      </div>
+      </section>
+
+      ${todayCake ? `
+      <section class="card">
+        <h2>Tiup Lilin & Rayakan!</h2>
+        <p class="small">Ketuk Lilin untuk Meniup! / Meniup ke Mikrofon untuk Memadamkan!</p>
+        <div class="cake-stand-wrap">
+          <div class="cake-stand"></div>
+          <div class="cake">
+            <div class="layer"></div>
+            <div class="deco deco-1"></div><div class="deco deco-2"></div><div class="deco deco-3"></div>
+            <div class="candle c1"></div><div class="candle c2"></div><div class="candle c3"></div>
+            <div class="flame ${state.flameOn ? "" : "off"}" id="flame"></div>
+          </div>
+        </div>
+        <div class="grid">
+          <button id="blow">Sentuh untuk Memadamkan!</button>
+          <button id="micBlow" class="secondary">Meniup ke Mikrofon</button>
+        </div>
+        <p id="wish">${state.flameOn ? "Ayo tiup lilinnya dulu, sayang~" : (simMode === "anniv" ? "Selamat Anniversary! Semoga makin lengket selamanya 💞" : "Selamat Ulang Tahun! Semoga semua doa terbaik terkabul 🎂")}</p>
+        <button>${simMode === "anniv" ? "Selamat Anniversary!" : "Selamat Ulang Tahun!"}</button>
+        <div class="silhouette">${otherOnline ? `🧍 ${partnerName} lagi lihat kamu!` : `...${partnerName} belum online`}</div>
+      </section>` : ""}
+
+      <section class="card"><h2>Pengaturan via Telegram</h2><p class="small">/setanniv, /setultah, /setname, /setuser, /setpass, /sim ultah|anniv|off, /cekconfig.</p></section>
     </div>
   `;
 
@@ -142,12 +210,17 @@ function renderDashboard() {
       state.flameOn = false;
       renderDashboard();
     };
+    document.getElementById("flame")?.addEventListener("click", () => {
+      state.flameOn = false;
+      renderDashboard();
+    });
+    attachMicBlow();
   }
-
 
   document.getElementById("addTimeline").onclick = async () => {
     const form = new FormData();
     form.append("title", document.getElementById("title").value);
+    form.append("location", document.getElementById("location").value);
     form.append("description", document.getElementById("description").value);
     form.append("takenAt", document.getElementById("takenAt").value);
     const file = document.getElementById("photo").files[0];
@@ -163,6 +236,7 @@ function renderDashboard() {
       ${item.imageUrl ? `<img src="${item.imageUrl}" loading="lazy"/>` : "<div></div>"}
       <div>
         <span class="tag">${item.takenAt || "tanpa tanggal"}</span>
+        ${item.location ? `<span class="tag">📍 ${item.location}</span>` : ""}
         <span class="tag">${item.uploadedBy}</span>
         <h3>${item.title}</h3>
         <p>${item.description || ""}</p>

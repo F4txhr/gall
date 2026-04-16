@@ -239,6 +239,7 @@ app.post("/api/timeline", authMiddleware, upload.single("photo"), async (req, re
     id: crypto.randomUUID(),
     title: req.body.title || "Tanpa Judul",
     description: req.body.description || "",
+    location: req.body.location || "",
     takenAt: req.body.takenAt,
     imageUrl: req.file ? `/uploads/${req.file.filename}` : "",
     uploadedBy: req.user.username,
