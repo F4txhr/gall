@@ -74,6 +74,11 @@ function writeDb(db) {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
 
+function logTelegram(message, extra = "") {
+  const suffix = extra ? ` | ${extra}` : "";
+  console.log(`[telegram] ${new Date().toISOString()} | ${message}${suffix}`);
+}
+
 function getTelegramBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN || "";
 }
@@ -90,20 +95,23 @@ async function getTelegramStatus() {
   const token = getTelegramBotToken();
   const chatIds = getTelegramChatIds();
   if (!token || !chatIds.length) {
+    logTelegram("status check: missing configuration", `token=${Boolean(token)} chatIds=${chatIds.length}`);
     return { configured: false, connected: false, chatIdsCount: chatIds.length };
   }
 
   try {
     const url = `https://api.telegram.org/bot${token}/getMe`;
     const res = await axios.get(url);
+    logTelegram("status check: connected", `bot=@${res.data?.result?.username || "unknown"} chatIds=${chatIds.length}`);
     return {
       configured: true,
       connected: Boolean(res.data?.ok),
       chatIdsCount: chatIds.length,
       botUsername: res.data?.result?.username || null
     };
-  } catch {
-    return { configured: true, connected: false, chatIdsCount: chatIds.length };
+  } catch (error) {
+    logTelegram("status check: failed", error.message);
+    return { configured: true, connected: false, chatIdsCount: chatIds.length, error: error.message };
   }
 }
 
@@ -238,6 +246,7 @@ async function sendTelegramToAll(text) {
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   for (const chatId of chatIds) {
     await axios.post(url, { chat_id: chatId, text });
+    logTelegram("sendMessage success", `chat_id=${chatId}`);
   }
 }
 
@@ -253,6 +262,7 @@ async function backupToTelegram(item, filePath) {
     form.append("caption", `Backup media baru: ${item.title} (${item.takenAt || "tanpa tanggal"})`);
     form.append("document", fs.createReadStream(filePath));
     await axios.post(url, form, { headers: form.getHeaders() });
+    logTelegram("sendDocument success", `chat_id=${chatId} title=${item.title}`);
   }
 }
 
@@ -356,7 +366,10 @@ async function processTelegramCommand(chatId, text) {
 async function pollTelegramUpdates() {
   const token = getTelegramBotToken();
   const allowedChatIds = getTelegramChatIds();
-  if (!token || !allowedChatIds.length) return;
+  if (!token || !allowedChatIds.length) {
+    logTelegram("poll skipped", `token=${Boolean(token)} chatIds=${allowedChatIds.length}`);
+    return;
+  }
 
   const db = readDb();
   const url = `https://api.telegram.org/bot${token}/getUpdates`;
@@ -376,14 +389,21 @@ async function pollTelegramUpdates() {
       if (!msg?.text || !msg?.chat?.id) continue;
 
       const chatId = String(msg.chat.id);
-      if (!allowedChatIds.includes(chatId)) continue;
+      if (!allowedChatIds.includes(chatId)) {
+        logTelegram("update ignored", `chat_id=${chatId}`);
+        continue;
+      }
 
+      logTelegram("update accepted", `chat_id=${chatId} text=${msg.text}`);
       await processTelegramCommand(chatId, msg.text);
     }
 
-    if (updates.length) writeDb(db);
+    if (updates.length) {
+      writeDb(db);
+      logTelegram("poll processed", `updates=${updates.length}`);
+    }
   } catch (error) {
-    console.error("pollTelegramUpdates error", error.message);
+    logTelegram("poll error", error.message);
   }
 }
 
@@ -415,6 +435,7 @@ cron.schedule("0 * * * *", async () => {
 
 setInterval(pollTelegramUpdates, 15000);
 pollTelegramUpdates();
+logTelegram("boot", `token=${Boolean(getTelegramBotToken())} chatIds=${getTelegramChatIds().join(",") || "-"}`);
 
 io.use((socket, next) => {
   const cookieHeader = socket.handshake.headers.cookie || "";

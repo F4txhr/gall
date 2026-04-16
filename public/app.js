@@ -39,7 +39,7 @@ function renderTelegramBadge() {
   const st = state.telegramStatus;
   if (!st) return "🤖 Status bot: mengecek...";
   if (!st.configured) return "⚠️ Bot belum aktif (cek TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_IDS)";
-  if (!st.connected) return `⚠️ Bot terkonfigurasi tapi belum terhubung (${st.chatIdsCount} chat id)`;
+  if (!st.connected) return `⚠️ Bot terkonfigurasi tapi belum terhubung (${st.chatIdsCount} chat id)${st.error ? ` | ${st.error}` : ""}`;
   return `✅ Bot siap digunakan (@${st.botUsername || "telegram_bot"}) untuk ${st.chatIdsCount} chat id`;
 }
 
