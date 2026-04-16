@@ -149,8 +149,8 @@ function renderDashboard() {
           <div class="avatar">${partnerName[0] || "A"}</div>
           <div class="heart-float">💖</div>
         </div>
-        <h1 class="font-romance">Hai Sayangku, ${partnerName}</h1>
-        <p class="small">Sejak ${s.relationshipStart} • Selamanya</p>
+        <h1 class="font-romance">Hai ${ownName} 💖</h1>
+        <p class="small">Pasanganmu: ${partnerName} • Sejak ${s.relationshipStart} • Selamanya</p>
         <div class="grid-2" style="width:100%; margin-top:16px">
           <div class="stat"><b>${relationDays.toLocaleString("id-ID")}</b><span class="small">Hari Jadian</span></div>
           <div class="stat"><b>${partnerBirthdayCountdown.replace(' hari', '')}</b><span class="small">Hari ke Ultah</span></div>
