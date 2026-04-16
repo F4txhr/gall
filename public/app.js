@@ -1,6 +1,18 @@
 const app = document.getElementById("app");
 let state = { me: null, data: null, flameOn: true, online: [], telegramStatus: null };
 
+function toast(message, type = "ok") {
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add("show"), 10);
+  setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => el.remove(), 280);
+  }, 2200);
+}
+
 function nextAnnual(dateStr) {
   const d = new Date(dateStr);
   const now = new Date();
@@ -178,7 +190,7 @@ function renderDashboard() {
         <p id="wish" class="wish">${state.flameOn ? "Tiup dulu ya sayang..." : "WUSSSS! 🎉 Semoga semua doa baik terkabul."}</p>
       </section>` : ""}
 
-      <section class="card">
+      <section class="card low-emphasis">
         <p class="small" id="telegramBadge">${renderTelegramBadge()}</p>
         <p class="small">/setanniv /setultah /setname /setuser /setpass /sim /cekconfig</p>
         <button class="secondary" id="logout">Logout</button>
@@ -197,6 +209,7 @@ function renderDashboard() {
       if (window.confetti) {
         window.confetti({ particleCount: 130, spread: 65, origin: { y: 0.8 }, colors: ["#ff748c", "#ffffff", "#ffd700"] });
       }
+      toast("Selamat! 🎉", "ok");
       renderDashboard();
     };
     document.getElementById("blow").onclick = celebrate;
@@ -205,6 +218,9 @@ function renderDashboard() {
   }
 
   document.getElementById("addTimeline").onclick = async () => {
+    const btn = document.getElementById("addTimeline");
+    btn.disabled = true;
+    btn.textContent = "Mengunggah...";
     const form = new FormData();
     form.append("title", document.getElementById("title").value);
     form.append("location", document.getElementById("location").value);
@@ -212,13 +228,23 @@ function renderDashboard() {
     form.append("takenAt", document.getElementById("takenAt").value);
     const file = document.getElementById("photo").files[0];
     if (file) form.append("photo", file);
-    await api("/api/timeline", "POST", form, true);
-    await loadData();
-    renderDashboard();
+    try {
+      await api("/api/timeline", "POST", form, true);
+      await loadData();
+      toast("Momen berhasil ditambahkan 💖", "ok");
+      renderDashboard();
+    } catch (e) {
+      toast(`Gagal upload: ${e.message}`, "error");
+      btn.disabled = false;
+      btn.textContent = "Upload ke Timeline";
+    }
   };
 
   const list = document.getElementById("timelineList");
-  list.innerHTML = state.data.timeline.map(item => `
+  if (!state.data.timeline.length) {
+    list.innerHTML = `<div class="empty-state">Belum ada momen. Yuk upload momen pertama kalian 💞</div>`;
+  } else {
+    list.innerHTML = state.data.timeline.map(item => `
     <div class="timeline-item animate__animated animate__fadeInUp">
       <div class="timeline-box">
         ${item.imageUrl ? `<img src="${item.imageUrl}" loading="lazy"/>` : ""}
@@ -229,12 +255,22 @@ function renderDashboard() {
       </div>
     </div>
   `).join("");
+  }
 
   document.querySelectorAll(".del").forEach(btn => {
     btn.onclick = async () => {
-      await api(`/api/timeline/${btn.dataset.id}`, "DELETE");
-      await loadData();
-      renderDashboard();
+      btn.disabled = true;
+      btn.textContent = "Menghapus...";
+      try {
+        await api(`/api/timeline/${btn.dataset.id}`, "DELETE");
+        await loadData();
+        toast("Momen dihapus", "ok");
+        renderDashboard();
+      } catch (e) {
+        toast(`Gagal hapus: ${e.message}`, "error");
+        btn.disabled = false;
+        btn.textContent = "Hapus";
+      }
     };
   });
 }

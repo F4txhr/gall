@@ -34,6 +34,10 @@ body {
   padding: 16px;
   margin-bottom: 16px;
 }
+.low-emphasis {
+  opacity: .82;
+  box-shadow: 0 8px 18px rgba(255, 116, 140, 0.08);
+}
 
 .hero {
   min-height: 78vh;
@@ -107,10 +111,20 @@ button {
   color: white;
   background: linear-gradient(120deg, #ff748c, #ff95af);
 }
+button:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
 button.secondary {
   background: #fff;
   color: #d14e75;
   border: 1px solid #ffd5e0;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(255, 116, 140, 0.5);
+  outline-offset: 1px;
 }
 
 .timeline-line { position: relative; padding-left: 26px; }
@@ -147,6 +161,15 @@ button.secondary {
 }
 .timeline-box img { width: 100%; height: 150px; object-fit: cover; border-radius: 14px; }
 .tag { font-size: 10px; color: var(--accent); font-weight: 700; margin-right: 6px; }
+.empty-state {
+  background: rgba(255,255,255,.6);
+  border-radius: 14px;
+  border: 1px dashed #ffd0db;
+  color: #a17a86;
+  font-size: 12px;
+  padding: 12px;
+  text-align: center;
+}
 
 .cake-shell { text-align: center; }
 .cake {
@@ -198,3 +221,30 @@ button.secondary {
 
 .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 12px; }
 .auth-card { width: min(420px, 100%); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%) translateY(12px);
+  background: #222;
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 12px;
+  opacity: 0;
+  transition: .25s ease;
+  z-index: 1000;
+}
+.toast.ok { background: #d14e75; }
+.toast.error { background: #8c2f46; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
