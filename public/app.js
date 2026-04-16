@@ -131,72 +131,58 @@ function renderDashboard() {
   const otherOnline = state.online.includes(state.me.role === "me" ? "partner" : "me");
 
   app.innerHTML = `
-    <div class="floating-hearts">${makeHearts()}</div>
-    <div class="container long-scroll">
-      <section class="card hero">
-        <div>
-          <h1>Cinta Kita</h1>
-          <p class="small">Antarmuka romantis, modern, lembut, dan smooth ✨</p>
+    <div class="container">
+      <section class="card hero animate__animated animate__zoomIn">
+        <div class="photo-wrap">
+          <div class="avatar">${partnerName[0] || "A"}</div>
+          <div class="heart-float">💖</div>
         </div>
-        <div class="couple-pics">
-          <div class="avatar">${s.meName[0] || "A"}</div>
-          <div class="avatar">${s.partnerName[0] || "K"}</div>
+        <h1 class="font-romance">Hai Sayangku, ${partnerName}</h1>
+        <p class="small">Sejak ${s.relationshipStart} • Selamanya</p>
+        <div class="grid-2" style="width:100%; margin-top:16px">
+          <div class="stat"><b>${relationDays.toLocaleString("id-ID")}</b><span class="small">Hari Jadian</span></div>
+          <div class="stat"><b>${partnerBirthdayCountdown.replace(' hari', '')}</b><span class="small">Hari ke Ultah</span></div>
         </div>
-        <div class="badges">
-          <span class="badge" id="telegramBadge">${renderTelegramBadge()}</span>
-          ${isSimulated ? `<span class="badge">🧪 Simulasi: ${simMode}</span>` : ""}
-        </div>
-        <button class="secondary" id="logout">Logout</button>
-      </section>
-
-      <section class="card feature-card">
-        <h2>Hari-hari Bersama</h2>
-        <p class="big-number">${relationDays.toLocaleString("id-ID")} Hari</p>
-        <p class="small">Countdown Anniversary: ${anniv}</p>
-      </section>
-
-      <section class="card feature-card">
-        <h2>Ulang Tahun ${partnerName}!</h2>
-        <p><strong>Tanggal:</strong> ${partnerBirthday}</p>
-        <p><strong>Usia:</strong> ${calcAge(partnerBirthday)} Tahun</p>
-        <p class="small">Countdown ${ownName}: ${ownBirthdayCountdown} • Countdown ${partnerName}: ${partnerBirthdayCountdown}</p>
       </section>
 
       <section class="card">
-        <h2>Perjalanan Kita</h2>
-        <p class="small">Timeline foto vertikal: tanggal, lokasi, dan caption singkat.</p>
-        <input id="title" placeholder="Judul momen (contoh: Pertemuan Pertama di Jakarta!)" />
-        <input id="location" placeholder="Lokasi (opsional, contoh: Jakarta)" />
-        <textarea id="description" placeholder="Caption singkat (opsional)"></textarea>
+        <h2 class="font-romance">Ayang Lagi Apa?</h2>
+        <div class="grid-2">
+          <div class="stat"><div>🧑‍🍳</div><b style="font-size:14px">${ownName}</b><span class="small">Lagi buka web ini</span></div>
+          <div class="stat"><div>👑</div><b style="font-size:14px">${partnerName}</b><span class="small">${otherOnline ? "Lagi lihat kamu" : "Belum online"}</span></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="font-romance">Perjalanan Kita</h2>
+        <input id="title" placeholder="Judul momen" />
+        <input id="location" placeholder="Lokasi (opsional)" />
+        <textarea id="description" placeholder="Caption singkat"></textarea>
         <input id="takenAt" type="date" />
         <input id="photo" type="file" accept="image/*" />
         <button id="addTimeline">Upload ke Timeline</button>
-        <div id="timelineList"></div>
+        <div id="timelineList" class="timeline-line"></div>
       </section>
 
-      ${todayCake ? `
-      <section class="card">
-        <h2>Tiup Lilin & Rayakan!</h2>
-        <p class="small">Ketuk Lilin untuk Meniup! / Meniup ke Mikrofon untuk Memadamkan!</p>
-        <div class="cake-stand-wrap">
+      ${todayCake ? `<section class="card cake-shell">
+        <h2 class="font-romance">Tiup Lilin & Rayakan!</h2>
+        <p class="small" id="mic-status">Ketuk Lilin untuk Meniup! / Meniup ke Mikrofon untuk Memadamkan!</p>
+        <div class="cake" id="cake-container">
+          <div class="cake-base"></div>
           <div class="cake-stand"></div>
-          <div class="cake">
-            <div class="layer"></div>
-            <div class="deco deco-1"></div><div class="deco deco-2"></div><div class="deco deco-3"></div>
-            <div class="candle c1"></div><div class="candle c2"></div><div class="candle c3"></div>
-            <div class="flame ${state.flameOn ? "" : "off"}" id="flame"></div>
-          </div>
+          <div class="candle c1"></div><div class="candle c2"></div><div class="candle c3"></div>
+          <div class="flame ${state.flameOn ? "" : "off"}" id="flame"></div>
         </div>
-        <div class="grid">
-          <button id="blow">Sentuh untuk Memadamkan!</button>
-          <button id="micBlow" class="secondary">Meniup ke Mikrofon</button>
-        </div>
-        <p id="wish">${state.flameOn ? "Ayo tiup lilinnya dulu, sayang~" : (simMode === "anniv" ? "Selamat Anniversary! Semoga makin lengket selamanya 💞" : "Selamat Ulang Tahun! Semoga semua doa terbaik terkabul 🎂")}</p>
-        <button>${simMode === "anniv" ? "Selamat Anniversary!" : "Selamat Ulang Tahun!"}</button>
-        <div class="silhouette">${otherOnline ? `🧍 ${partnerName} lagi lihat kamu!` : `...${partnerName} belum online`}</div>
+        <button id="blow">${simMode === "anniv" ? "Selamat Anniversary!" : "Selamat Ulang Tahun!"}</button>
+        <button id="micBlow" class="secondary">Aktifkan Mic</button>
+        <p id="wish" class="wish">${state.flameOn ? "Tiup dulu ya sayang..." : "WUSSSS! 🎉 Semoga semua doa baik terkabul."}</p>
       </section>` : ""}
 
-      <section class="card"><h2>Pengaturan via Telegram</h2><p class="small">/setanniv, /setultah, /setname, /setuser, /setpass, /sim ultah|anniv|off, /cekconfig.</p></section>
+      <section class="card">
+        <p class="small" id="telegramBadge">${renderTelegramBadge()}</p>
+        <p class="small">/setanniv /setultah /setname /setuser /setpass /sim /cekconfig</p>
+        <button class="secondary" id="logout">Logout</button>
+      </section>
     </div>
   `;
 
@@ -206,14 +192,15 @@ function renderDashboard() {
   };
 
   if (todayCake) {
-    document.getElementById("blow").onclick = () => {
+    const celebrate = () => {
       state.flameOn = false;
+      if (window.confetti) {
+        window.confetti({ particleCount: 130, spread: 65, origin: { y: 0.8 }, colors: ["#ff748c", "#ffffff", "#ffd700"] });
+      }
       renderDashboard();
     };
-    document.getElementById("flame")?.addEventListener("click", () => {
-      state.flameOn = false;
-      renderDashboard();
-    });
+    document.getElementById("blow").onclick = celebrate;
+    document.getElementById("cake-container")?.addEventListener("click", celebrate);
     attachMicBlow();
   }
 
@@ -232,14 +219,12 @@ function renderDashboard() {
 
   const list = document.getElementById("timelineList");
   list.innerHTML = state.data.timeline.map(item => `
-    <div class="timeline-item">
-      ${item.imageUrl ? `<img src="${item.imageUrl}" loading="lazy"/>` : "<div></div>"}
-      <div>
-        <span class="tag">${item.takenAt || "tanpa tanggal"}</span>
-        ${item.location ? `<span class="tag">📍 ${item.location}</span>` : ""}
-        <span class="tag">${item.uploadedBy}</span>
-        <h3>${item.title}</h3>
-        <p>${item.description || ""}</p>
+    <div class="timeline-item animate__animated animate__fadeInUp">
+      <div class="timeline-box">
+        ${item.imageUrl ? `<img src="${item.imageUrl}" loading="lazy"/>` : ""}
+        <p><span class="tag">${item.takenAt || "tanpa tanggal"}</span>${item.location ? `<span class="tag">📍 ${item.location}</span>` : ""}</p>
+        <p style="font-size:12px; font-weight:700; margin:6px 0 2px">${item.title}</p>
+        <p class="small" style="margin-bottom:8px">${item.description || ""}</p>
         <button data-id="${item.id}" class="secondary del">Hapus</button>
       </div>
     </div>
