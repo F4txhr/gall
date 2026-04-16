@@ -10,6 +10,32 @@ const axios = require("axios");
 const { Server } = require("socket.io");
 const FormData = require("form-data");
 
+function loadDotEnvFile() {
+  const envFile = path.join(__dirname, ".env");
+  if (!fs.existsSync(envFile)) return;
+
+  const raw = fs.readFileSync(envFile, "utf8");
+  let loaded = 0;
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const idx = trimmed.indexOf("=");
+    if (idx === -1) continue;
+
+    const key = trimmed.slice(0, idx).trim();
+    const value = trimmed.slice(idx + 1).trim();
+    if (!process.env[key]) {
+      process.env[key] = value;
+      loaded += 1;
+    }
+  }
+
+  console.log(`[env] loaded ${loaded} keys from .env`);
+}
+
+loadDotEnvFile();
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
