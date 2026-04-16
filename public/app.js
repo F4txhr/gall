@@ -81,8 +81,10 @@ function renderDashboard() {
   const ownBirthdayCountdown = diffToText(nextAnnual(ownBirthday));
   const partnerBirthdayCountdown = diffToText(nextAnnual(partnerBirthday));
   const relationDays = daysSince(s.relationshipStart);
+  const simMode = state.data.simulation?.mode || "off";
+  const isSimulated = simMode === "ultah" || simMode === "anniv";
 
-  const todayCake = isSpecialDay(s.myBirthday) || isSpecialDay(s.partnerBirthday) || isSpecialDay(s.anniversaryDate);
+  const todayCake = isSimulated || isSpecialDay(s.myBirthday) || isSpecialDay(s.partnerBirthday) || isSpecialDay(s.anniversaryDate);
   const other = partnerName;
   const otherRole = state.me.role === "me" ? "partner" : "me";
   const otherOnline = state.online.includes(otherRole);
@@ -92,6 +94,7 @@ function renderDashboard() {
       <div class="card">
         <h1>Hai, ${state.me.username} 💖</h1>
         <p class="small" id="telegramBadge">${renderTelegramBadge()}</p>
+        ${isSimulated ? `<p class="small">🧪 Simulasi aktif dari Telegram: <strong>${simMode}</strong></p>` : ""}
         <button class="secondary" id="logout">Logout</button>
       </div>
       <div class="card grid">
@@ -110,7 +113,7 @@ function renderDashboard() {
         <div class="silhouette">${otherOnline ? `🧍‍♀️ ${other} lagi lihat kamu!` : `...${other} belum online`}</div>
       </div>` : ""}
 
-      <div class="card"><h2>Pengaturan Cinta via Telegram ⚙️</h2><p class="small">Semua pengaturan sekarang hanya lewat Telegram command: /setanniv, /setultah, /setname, /setuser, /setpass, /cekconfig.</p></div>
+      <div class="card"><h2>Pengaturan Cinta via Telegram ⚙️</h2><p class="small">Semua pengaturan sekarang hanya lewat Telegram command: /setanniv, /setultah, /setname, /setuser, /setpass, /sim ultah|anniv|off, /cekconfig.</p></div>
 
       <div class="card">
         <h2>Timeline Library 📸</h2>

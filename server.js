@@ -70,6 +70,9 @@ const defaultDb = {
   },
   timeline: [],
   sentReminders: {},
+  simulation: {
+    mode: "off"
+  },
   telegram: {
     lastUpdateId: 0
   }
@@ -89,6 +92,7 @@ function readDb() {
     };
     db.timeline = db.timeline || [];
     db.sentReminders = db.sentReminders || {};
+    db.simulation = { ...defaultDb.simulation, ...(db.simulation || {}) };
     db.telegram = { ...defaultDb.telegram, ...(db.telegram || {}) };
     return db;
   } catch {
@@ -200,6 +204,7 @@ app.get("/api/data", authMiddleware, (req, res) => {
   res.json({
     settings: db.settings,
     timeline: db.timeline,
+    simulation: db.simulation,
     usernames: {
       me: db.credentials.me.username,
       partner: db.credentials.partner.username
@@ -308,6 +313,7 @@ function telegramHelpText() {
     "/setuser kamu usernameBaru",
     "/setpass aku passwordBaru",
     "/setpass kamu passwordBaru",
+    "/sim ultah|anniv|off",
     "/cekconfig"
   ].join("\n");
 }
@@ -364,6 +370,13 @@ async function processTelegramCommand(db, chatId, text) {
     if (who === "aku") db.credentials.me.password = password;
     if (who === "kamu") db.credentials.partner.password = password;
     changed = true;
+  } else if (command === "/sim") {
+    const mode = (parts[1] || "").toLowerCase();
+    if (!["ultah", "anniv", "off"].includes(mode)) {
+      return sendTelegramReply(chatId, "Format salah. Contoh: /sim ultah (atau anniv/off)");
+    }
+    db.simulation.mode = mode;
+    changed = true;
   } else if (command === "/cekconfig") {
     return sendTelegramReply(
       chatId,
@@ -374,7 +387,8 @@ async function processTelegramCommand(db, chatId, text) {
         `Nama aku: ${db.settings.meName}`,
         `Nama kamu: ${db.settings.partnerName}`,
         `User aku: ${db.credentials.me.username}`,
-        `User kamu: ${db.credentials.partner.username}`
+        `User kamu: ${db.credentials.partner.username}`,
+        `Simulasi: ${db.simulation.mode}`
       ].join("\n")
     );
   } else {
