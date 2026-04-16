@@ -91,10 +91,15 @@ function renderDashboard() {
 
   app.innerHTML = `
     <div class="container">
-      <div class="card">
-        <h1>Hai, ${state.me.username} 💖</h1>
-        <p class="small" id="telegramBadge">${renderTelegramBadge()}</p>
-        ${isSimulated ? `<p class="small">🧪 Simulasi aktif dari Telegram: <strong>${simMode}</strong></p>` : ""}
+      <div class="card hero">
+        <div>
+          <h1>Hai, ${state.me.username} 💖</h1>
+          <p class="small">Dashboard cinta yang lebih clean, smooth, dan modern.</p>
+        </div>
+        <div class="badges">
+          <span class="badge" id="telegramBadge">${renderTelegramBadge()}</span>
+          ${isSimulated ? `<span class="badge">🧪 Simulasi: <strong>${simMode}</strong></span>` : ""}
+        </div>
         <button class="secondary" id="logout">Logout</button>
       </div>
       <div class="card grid">
