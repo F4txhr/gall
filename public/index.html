@@ -3,15 +3,92 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Our Home 💖</title>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <title>Anniversary Vault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div id="app"></div>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <div class="filmstrip-bg" aria-hidden="true">
+    <div class="film-row row-1"></div>
+    <div class="film-row row-2"></div>
+    <div class="film-row row-3"></div>
+    <div class="film-row row-4"></div>
+    <div class="bg-overlay"></div>
+  </div>
+
+  <header class="top-nav glass">
+    <span class="logo">AURELIA VAULT</span>
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#memories">Memories</a>
+      <a href="#vault">Vault</a>
+      <a href="#settings">Settings</a>
+    </nav>
+  </header>
+
+  <main class="page" id="home">
+    <section class="main-card glass">
+      <p class="eyebrow">Relationship Tracker</p>
+      <h1>Days Together</h1>
+      <p id="daysTogether" class="days">0</p>
+
+      <div class="widgets">
+        <article class="widget">
+          <h2>Next Anniversary</h2>
+          <p id="annivCountdown">-</p>
+        </article>
+        <article class="widget birthday-widget">
+          <h2>🎁 Partner's Birthday</h2>
+          <p id="birthdayCountdown">-</p>
+        </article>
+      </div>
+
+      <section id="memories" class="memories">
+        <div class="section-head">
+          <h3>Latest Memories</h3>
+        </div>
+        <div class="memory-grid" id="memoryGrid"></div>
+      </section>
+
+      <section id="vault" class="vault-note">
+        <h3>Vault Notes</h3>
+        <p>“Our story is written in gold between midnight skies.”</p>
+      </section>
+
+      <section id="settings" class="settings-note">
+        <h3>Settings</h3>
+        <p>Dates are configured inside <code>public/app.js</code> constants.</p>
+      </section>
+    </section>
+  </main>
+
+  <section id="birthdayOverlay" class="birthday-overlay hidden">
+    <div class="overlay-card glass">
+      <h2 class="overlay-title">Happy Birthday, My Love</h2>
+
+      <div class="cake-wrap">
+        <div class="cake-plate"></div>
+        <div class="cake-body"></div>
+        <div class="candle"></div>
+        <div id="flame" class="flame"></div>
+      </div>
+
+      <div class="overlay-actions">
+        <button id="musicBtn">Play Music</button>
+        <textarea id="wishInput" placeholder="Make a wish..."></textarea>
+        <button id="blowBtn" class="accent">Blow Candle</button>
+      </div>
+
+      <p id="romanticMessage" class="romantic-message hidden">
+        Setiap detik bersamamu adalah rumah. Semoga di ulang tahunmu ini, semua doa terbaikmu jadi nyata,
+        langkahmu selalu ditemani cahaya, dan kita terus menua dalam cinta yang makin dewasa.
+      </p>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
