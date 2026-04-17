@@ -315,6 +315,7 @@ function telegramHelpText() {
     "/setpass aku passwordBaru",
     "/setpass kamu passwordBaru",
     "/sim ultah|anniv|off",
+    "/menu",
     "/cekconfig"
   ].join("\n");
 }
@@ -392,6 +393,8 @@ async function processTelegramCommand(db, chatId, text) {
         `Simulasi: ${db.simulation.mode}`
       ].join("\n")
     );
+  } else if (command === "/menu") {
+    return sendTelegramReply(chatId, telegramHelpText());
   } else {
     return sendTelegramReply(chatId, telegramHelpText());
   }

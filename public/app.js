@@ -6,11 +6,18 @@ function toast(message, type = "ok") {
   el.className = `toast ${type}`;
   el.textContent = message;
   document.body.appendChild(el);
+  const live = document.getElementById("liveRegion");
+  if (live) live.textContent = message;
   setTimeout(() => el.classList.add("show"), 10);
   setTimeout(() => {
     el.classList.remove("show");
     setTimeout(() => el.remove(), 280);
   }, 2200);
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme || "soft";
+  localStorage.setItem("theme", theme || "soft");
 }
 
 function nextAnnual(dateStr) {
@@ -141,8 +148,13 @@ function renderDashboard() {
   const isSimulated = simMode === "ultah" || simMode === "anniv";
   const todayCake = isSimulated || isSpecialDay(s.myBirthday) || isSpecialDay(s.partnerBirthday) || isSpecialDay(s.anniversaryDate);
   const otherOnline = state.online.includes(state.me.role === "me" ? "partner" : "me");
+  const yearsTogether = Math.floor(relationDays / 365);
+  const partnerAge = calcAge(partnerBirthday);
+  const showOnboarding = !localStorage.getItem("onboarding_done");
 
   app.innerHTML = `
+    <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+    ${showOnboarding ? `<section class="onboarding card"><h3>Mulai Cepat 💞</h3><p class="small">1) Atur nama/tanggal di Telegram • 2) Upload momen pertama • 3) Rayakan bersama 🎉</p><button id="finishOnboarding">Siap, Lanjut!</button></section>` : ""}
     <div class="container">
       <section class="card hero animate__animated animate__zoomIn">
         <div class="photo-wrap">
@@ -150,10 +162,10 @@ function renderDashboard() {
           <div class="heart-float">💖</div>
         </div>
         <h1 class="font-romance">Hai ${ownName} 💖</h1>
-        <p class="small">Pasanganmu: ${partnerName} • Sejak ${s.relationshipStart} • Selamanya</p>
+        <p class="small">Pasanganmu: ${partnerName} • Sejak ${s.relationshipStart} • ${yearsTogether}+ tahun bersama</p>
         <div class="grid-2" style="width:100%; margin-top:16px">
           <div class="stat"><b>${relationDays.toLocaleString("id-ID")}</b><span class="small">Hari Jadian</span></div>
-          <div class="stat"><b>${partnerBirthdayCountdown.replace(' hari', '')}</b><span class="small">Hari ke Ultah</span></div>
+          <div class="stat"><b>${partnerBirthdayCountdown.replace(' hari', '')}</b><span class="small">Hari ke Ultah ${partnerName} (${partnerAge} th)</span></div>
         </div>
       </section>
 
@@ -172,6 +184,7 @@ function renderDashboard() {
         <textarea id="description" placeholder="Caption singkat"></textarea>
         <input id="takenAt" type="date" />
         <input id="photo" type="file" accept="image/*" />
+        <img id="photoPreview" style="display:none;width:100%;border-radius:12px;margin-bottom:8px;max-height:180px;object-fit:cover;" />
         <button id="addTimeline">Upload ke Timeline</button>
         <div id="timelineList" class="timeline-line"></div>
       </section>
@@ -192,11 +205,27 @@ function renderDashboard() {
 
       <section class="card low-emphasis">
         <p class="small" id="telegramBadge">${renderTelegramBadge()}</p>
-        <p class="small">/setanniv /setultah /setname /setuser /setpass /sim /cekconfig</p>
+        <label class="small" for="themeSelect">Theme</label>
+        <select id="themeSelect">
+          <option value="soft">Soft Pink</option>
+          <option value="lavender">Lavender</option>
+          <option value="gold">Cream Gold</option>
+        </select>
+        <details>
+          <summary class="small">Buka Command Telegram</summary>
+          <p class="small">/setanniv /setultah /setname /setuser /setpass /sim /menu /cekconfig</p>
+        </details>
         <button class="secondary" id="logout">Logout</button>
       </section>
     </div>
   `;
+
+  if (showOnboarding) {
+    document.getElementById("finishOnboarding").onclick = () => {
+      localStorage.setItem("onboarding_done", "1");
+      renderDashboard();
+    };
+  }
 
   document.getElementById("logout").onclick = async () => {
     await api("/api/logout", "POST", {});
@@ -273,6 +302,19 @@ function renderDashboard() {
       }
     };
   });
+
+  const photoInput = document.getElementById("photo");
+  photoInput.onchange = () => {
+    const file = photoInput.files?.[0];
+    const preview = document.getElementById("photoPreview");
+    if (!file) return (preview.style.display = "none");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  };
+
+  const themeSelect = document.getElementById("themeSelect");
+  themeSelect.value = localStorage.getItem("theme") || "soft";
+  themeSelect.onchange = () => applyTheme(themeSelect.value);
 }
 
 async function loadData() {
@@ -282,6 +324,7 @@ async function loadData() {
 
 async function bootstrap() {
   try {
+    applyTheme(localStorage.getItem("theme") || "soft");
     state.me = await api("/api/me");
     await loadData();
     renderDashboard();
