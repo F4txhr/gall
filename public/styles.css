@@ -268,6 +268,15 @@ button, textarea {
   padding: 10px 12px;
   font-family: inherit;
 }
+input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(212,175,55,.35);
+  background: rgba(10,25,47,.45);
+  color: #eff4ff;
+  padding: 10px 12px;
+  font-family: inherit;
+}
 textarea { min-height: 90px; resize: vertical; }
 button.accent { background: linear-gradient(120deg, #c89d2e, #d4af37); color: #101010; font-weight: 700; }
 
@@ -278,6 +287,23 @@ button.accent { background: linear-gradient(120deg, #c89d2e, #d4af37); color: #1
   color: #d8deea;
   line-height: 1.65;
 }
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 14, 0.8);
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  z-index: 100;
+}
+.login-card {
+  width: min(380px, 100%);
+  border-radius: 18px;
+  padding: 18px;
+}
+.login-card h2 { margin-top: 0; }
+.login-error { color: #ffd2d2; font-size: 13px; margin-top: 0; }
 
 @media (max-width: 640px) {
   .top-nav { flex-direction: column; gap: 8px; }

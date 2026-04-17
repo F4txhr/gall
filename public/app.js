@@ -157,17 +157,21 @@ function initBirthdayOverlay() {
 }
 
 function renderLogin(errorMsg = "") {
-  document.body.innerHTML = `
-    <main style="min-height:100vh;display:grid;place-items:center;background:#121212;color:#fff;font-family:Inter,sans-serif;padding:16px">
-      <section style="width:min(380px,100%);border:1px solid rgba(212,175,55,.35);border-radius:16px;padding:16px;background:rgba(255,255,255,.07);backdrop-filter:blur(12px)">
-        <h2 style="margin-top:0">Masuk ke Anniversary Vault</h2>
-        ${errorMsg ? `<p style="color:#ffcccb">${errorMsg}</p>` : ""}
-        <input id="loginUser" placeholder="username" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid #334" />
-        <input id="loginPass" placeholder="password" type="password" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid #334" />
-        <button id="loginBtn" style="width:100%;padding:10px;border-radius:10px;border:none;background:#D4AF37;color:#111;font-weight:700">Login</button>
-      </section>
-    </main>
+  const existing = document.getElementById("loginOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("section");
+  overlay.id = "loginOverlay";
+  overlay.className = "login-overlay";
+  overlay.innerHTML = `
+    <section class="login-card glass">
+      <h2>Masuk ke Anniversary Vault</h2>
+      ${errorMsg ? `<p class="login-error">${errorMsg}</p>` : ""}
+      <input id="loginUser" placeholder="username" />
+      <input id="loginPass" placeholder="password" type="password" />
+      <button id="loginBtn" class="accent">Login</button>
+    </section>
   `;
+  document.body.appendChild(overlay);
 
   document.getElementById("loginBtn").onclick = async () => {
     try {
