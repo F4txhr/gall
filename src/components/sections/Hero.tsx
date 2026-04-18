@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export function Hero(): JSX.Element {
@@ -19,8 +20,22 @@ export function Hero(): JSX.Element {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
-        Fondasi awal sudah siap: Next.js + Tailwind + Framer Motion + Firebase/Supabase + Telegram bot.
+        Fondasi awal siap. Sekarang sudah lanjut ke Phase 2: login cowo/cewe + session + redirect role.
       </motion.p>
+
+      <motion.div
+        className="mt-8"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.35 }}
+      >
+        <Link
+          href="/login"
+          className="rounded-lg bg-bucin-gold px-6 py-3 font-semibold text-bucin-bg transition hover:bg-bucin-hover"
+        >
+          Mulai Login
+        </Link>
+      </motion.div>
     </section>
   );
 }

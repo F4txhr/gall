@@ -1,13 +1,20 @@
 # Web Bucin
 
-Initial implementation for **Phase 1 (Setup & Infrastructure)** from `ROADMAP_WEB_BUCIN.md`.
+Initial implementation now covers:
+- **Phase 1:** Setup & infrastructure
+- **Phase 2 (partial):** Login system (cowo/cewe auth, session cookie, role-based redirect)
 
 ## Included in this commit
 - Next.js (App Router) + TypeScript setup
 - Tailwind CSS setup and color palette mapping
-- Framer Motion ready-to-use hero section
+- Framer Motion hero section
 - Firebase + Supabase client bootstrap files
 - Telegram bot command scaffolding (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
+- Login API endpoints: `POST /api/login`, `POST /api/logout`, `GET /api/me`
+- Protected route setup with `middleware.ts` for `/app/*` and `/login`
+- Role dashboards:
+  - `/app/cowo`
+  - `/app/cewe`
 
 ## Run locally
 1. Copy environment variables:
@@ -22,6 +29,11 @@ Initial implementation for **Phase 1 (Setup & Infrastructure)** from `ROADMAP_WE
    ```bash
    npm start
    ```
+4. Open:
+   - `http://localhost:3000/login`
+   - login default:
+     - cowo → `cowologin`
+     - cewe → `cewelogin`
 
 ## Termux quick fix for `ENOENT: package.json`
 If you see:
