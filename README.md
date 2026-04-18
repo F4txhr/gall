@@ -2,14 +2,17 @@
 
 Progress implementasi roadmap:
 - **Phase 1:** Setup & infrastructure ✅
-- **Phase 2:** Login system + Hero typing + Love Counter + Countdown tabs ✅ (initial)
+- **Phase 2:** Login system + Hero typing + Love Counter + Countdown cards ✅ (initial)
 
 ## Fitur yang sudah aktif
 - Login role-based (`cowo` / `cewe`) dengan session cookie
 - Redirect auth via middleware (`/login` ↔ `/app/{role}`)
 - Hero section dengan typing animation nama pasangan
 - Real-time love counter (hari/jam/menit/detik)
-- Countdown ulang tahun + anniversary dengan tab switcher dan progress bar
+- Countdown tampil langsung semua per-card ke bawah:
+  - Anniversary
+  - Ulang tahun cowo
+  - Ulang tahun cewe
 - Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
 
 ## Endpoint API auth

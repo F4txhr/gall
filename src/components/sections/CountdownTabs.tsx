@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import { relationshipConfig } from '@/lib/relationship';
 
-type TabKey = 'birthday' | 'anniversary';
+type CountdownItem = {
+  title: string;
+  dateIso: string;
+};
 
 function getTimeRemaining(targetIso: string): number {
   return Math.max(0, new Date(targetIso).getTime() - Date.now());
@@ -27,53 +29,42 @@ function buildProgress(targetIso: string): number {
   return Math.max(0, Math.min(100, (elapsed / oneYearMs) * 100));
 }
 
-export function CountdownTabs(): JSX.Element {
-  const [tab, setTab] = useState<TabKey>('birthday');
-
-  const mapping = useMemo(
-    () => ({
-      birthday: { title: 'Countdown Ulang Tahun', date: relationshipConfig.birthdayDate },
-      anniversary: { title: 'Countdown Anniversary', date: relationshipConfig.anniversaryDate },
-    }),
-    []
-  );
-
-  const active = mapping[tab];
-  const remainingMs = getTimeRemaining(active.date);
+function CountdownCard({ title, dateIso }: CountdownItem): JSX.Element {
+  const remainingMs = getTimeRemaining(dateIso);
   const remainingText = formatRemaining(remainingMs);
-  const progress = buildProgress(active.date);
+  const progress = buildProgress(dateIso);
 
   return (
-    <section className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-      <h2 className="text-3xl font-semibold md:text-4xl">Birthday & Anniversary Countdown</h2>
+    <article className="w-full max-w-2xl rounded-2xl bg-bucin-card p-6 text-left shadow-xl">
+      <h3 className="text-xl font-semibold">{title}</h3>
+      <p className="mt-2 text-bucin-textSecondary">
+        Target: {new Date(dateIso).toLocaleDateString('id-ID', { dateStyle: 'full' })}
+      </p>
+      <p className="mt-5 text-2xl font-bold text-bucin-gold">{remainingText}</p>
 
-      <div className="mt-6 flex gap-3">
-        <button
-          type="button"
-          onClick={() => setTab('birthday')}
-          className={`rounded-lg px-4 py-2 ${tab === 'birthday' ? 'bg-bucin-gold text-bucin-bg' : 'bg-bucin-card'}`}
-        >
-          Birthday
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('anniversary')}
-          className={`rounded-lg px-4 py-2 ${tab === 'anniversary' ? 'bg-bucin-gold text-bucin-bg' : 'bg-bucin-card'}`}
-        >
-          Anniversary
-        </button>
+      <div className="mt-5 h-3 w-full rounded-full bg-bucin-bg">
+        <div className="h-3 rounded-full bg-bucin-gold transition-all" style={{ width: `${progress}%` }} />
       </div>
+    </article>
+  );
+}
 
-      <div className="mt-8 w-full max-w-2xl rounded-2xl bg-bucin-card p-6 shadow-xl">
-        <h3 className="text-xl font-semibold">{active.title}</h3>
-        <p className="mt-2 text-bucin-textSecondary">
-          Target: {new Date(active.date).toLocaleDateString('id-ID', { dateStyle: 'full' })}
-        </p>
-        <p className="mt-5 text-2xl font-bold text-bucin-gold">{remainingText}</p>
+export function CountdownTabs(): JSX.Element {
+  const countdownItems: CountdownItem[] = [
+    { title: 'Anniversary', dateIso: relationshipConfig.anniversaryDate },
+    { title: 'Ulang Tahun Cowo', dateIso: relationshipConfig.birthdayCowoDate },
+    { title: 'Ulang Tahun Cewe', dateIso: relationshipConfig.birthdayCeweDate },
+  ];
 
-        <div className="mt-5 h-3 w-full rounded-full bg-bucin-bg">
-          <div className="h-3 rounded-full bg-bucin-gold transition-all" style={{ width: `${progress}%` }} />
-        </div>
+  return (
+    <section className="flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
+      <h2 className="text-3xl font-semibold md:text-4xl">Countdown</h2>
+      <p className="mt-3 text-bucin-textSecondary">Anniv, ultah cowo, dan ultah cewe langsung tampil semua per card.</p>
+
+      <div className="mt-8 flex w-full flex-col items-center gap-5">
+        {countdownItems.map((item) => (
+          <CountdownCard key={item.title} title={item.title} dateIso={item.dateIso} />
+        ))}
       </div>
     </section>
   );
