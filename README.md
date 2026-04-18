@@ -18,7 +18,24 @@ Initial implementation for **Phase 1 (Setup & Infrastructure)** from `ROADMAP_WE
    ```bash
    npm install
    ```
-3. Start dev server:
+3. Start development server:
    ```bash
-   npm run dev
+   npm start
    ```
+
+## Termux quick fix for `ENOENT: package.json`
+If you see:
+
+`npm ERR! enoent Could not read package.json`
+
+that means your local folder is not synced with the latest commit contents.
+
+Run these commands from your repo root:
+
+```bash
+git status
+git pull
+ls -la
+```
+
+You should see `package.json`, `next.config.mjs`, and `src/` before running `npm install` or `npm start`.
