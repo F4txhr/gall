@@ -91,6 +91,7 @@ body {
 .top-nav .logo { font-size: 12px; letter-spacing: .18em; color: var(--gold); }
 .top-nav nav { display: flex; gap: 14px; }
 .top-nav a { color: var(--text); text-decoration: none; font-size: 13px; opacity: .9; }
+.top-nav a.active { color: var(--gold); border-bottom: 1px solid var(--gold); padding-bottom: 2px; }
 
 .page {
   min-height: 100vh;
@@ -145,7 +146,9 @@ h1 {
 .widget p { margin: 0; color: var(--mist); }
 
 .memories { margin-top: 20px; }
-.section-head h3 { margin: 0 0 10px; font-size: 1.15rem; color: var(--gold); }
+.section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.section-head h3 { margin: 0; font-size: 1.15rem; color: var(--gold); }
+.small-btn { width: auto; padding: 8px 10px; font-size: 12px; }
 
 .memory-grid {
   display: grid;
@@ -158,6 +161,12 @@ h1 {
   border-radius: 8px;
   background: linear-gradient(160deg, #1f252d, #141c24);
   padding: 6px;
+}
+.memory-item .delete-memory {
+  margin-top: 6px;
+  width: 100%;
+  font-size: 11px;
+  padding: 7px 8px;
 }
 
 .memory-photo {
@@ -305,11 +314,33 @@ button.accent { background: linear-gradient(120deg, #c89d2e, #d4af37); color: #1
 .login-card h2 { margin-top: 0; }
 .login-error { color: #ffd2d2; font-size: 13px; margin-top: 0; }
 
+.memory-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 14, 0.75);
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  z-index: 120;
+}
+.memory-modal-card {
+  width: min(460px, 100%);
+  border-radius: 16px;
+  padding: 16px;
+}
+.memory-modal-card h3 { margin-top: 0; }
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 @media (max-width: 640px) {
   .top-nav { flex-direction: column; gap: 8px; }
   .top-nav nav { flex-wrap: wrap; justify-content: center; }
   .main-card { padding: 18px; }
   .memory-photo { height: 95px; }
+  .film-row > span:nth-child(n+12) { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -27,6 +27,15 @@ async function api(url, method = "GET", body) {
   return res.json();
 }
 
+async function apiForm(url, formData) {
+  const res = await fetch(url, { method: "POST", body: formData });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Gagal request" }));
+    throw new Error(err.error || "Request error");
+  }
+  return res.json();
+}
+
 function daysSince(dateStr) {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -74,7 +83,7 @@ function buildMemoryGrid() {
   const grid = document.getElementById("memoryGrid");
   const items = (appState.data?.timeline || []).slice(0, 4);
   if (!items.length) {
-    grid.innerHTML = '<p style="color:#9ca8b9;font-size:12px">Belum ada memori. Upload lewat endpoint timeline atau versi dashboard lama.</p>';
+    grid.innerHTML = '<p style="color:#9ca8b9;font-size:12px">Belum ada memori. Klik tombol <b>Tambah Memory</b> untuk mulai.</p>';
     return;
   }
 
@@ -84,6 +93,7 @@ function buildMemoryGrid() {
         <article class="memory-item">
           <div class="memory-photo" style="background-image:url('${item.imageUrl || ""}');background-size:cover;background-position:center"></div>
           <small>${item.takenAt || "-"} • ${item.title || "Memory"}</small>
+          <button class="delete-memory" data-id="${item.id}">Hapus</button>
         </article>
       `
     )
@@ -144,6 +154,8 @@ function handleBlowCandle() {
 function shouldShowBirthdayOverlay() {
   const s = appState.data.settings;
   const sim = appState.data.simulation?.mode;
+  const todayKey = new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem("birthday_overlay_dismissed") === todayKey) return false;
   if (sim === "ultah" || sim === "anniv") return true;
   return isToday(s.myBirthday) || isToday(s.partnerBirthday);
 }
@@ -152,8 +164,64 @@ function initBirthdayOverlay() {
   const overlay = document.getElementById("birthdayOverlay");
   if (!shouldShowBirthdayOverlay()) return;
   overlay.classList.remove("hidden");
+  document.getElementById("closeOverlayBtn").addEventListener("click", () => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    localStorage.setItem("birthday_overlay_dismissed", todayKey);
+    overlay.classList.add("hidden");
+  });
   document.getElementById("musicBtn").addEventListener("click", toggleMusic);
   document.getElementById("blowBtn").addEventListener("click", handleBlowCandle);
+}
+
+function initNavActiveState() {
+  const links = [...document.querySelectorAll(".top-nav a")];
+  const sections = links
+    .map((link) => document.querySelector(link.getAttribute("href")))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const id = `#${entry.target.id}`;
+      links.forEach((l) => l.classList.toggle("active", l.getAttribute("href") === id));
+    });
+  }, { threshold: 0.45 });
+
+  sections.forEach((s) => observer.observe(s));
+}
+
+function initMemoryModal() {
+  const modal = document.getElementById("memoryModal");
+  const openBtn = document.getElementById("openMemoryModal");
+  const closeBtn = document.getElementById("cancelMemoryBtn");
+  const saveBtn = document.getElementById("saveMemoryBtn");
+
+  openBtn.onclick = () => modal.classList.remove("hidden");
+  closeBtn.onclick = () => modal.classList.add("hidden");
+
+  saveBtn.onclick = async () => {
+    const form = new FormData();
+    form.append("title", document.getElementById("memoryTitle").value);
+    form.append("location", document.getElementById("memoryLocation").value);
+    form.append("description", document.getElementById("memoryDesc").value);
+    form.append("takenAt", document.getElementById("memoryDate").value);
+    const file = document.getElementById("memoryPhoto").files[0];
+    if (file) form.append("photo", file);
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Menyimpan...";
+    try {
+      await apiForm("/api/timeline", form);
+      appState.data = await api("/api/data");
+      buildMemoryGrid();
+      modal.classList.add("hidden");
+    } catch (e) {
+      alert(`Gagal simpan memory: ${e.message}`);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Simpan";
+    }
+  };
 }
 
 function renderLogin(errorMsg = "") {
@@ -197,7 +265,19 @@ async function init() {
     buildFilmRows();
     buildMemoryGrid();
     updateCounters();
+    initNavActiveState();
+    initMemoryModal();
     initBirthdayOverlay();
+
+    document.addEventListener("click", async (e) => {
+      const btn = e.target.closest(".delete-memory");
+      if (!btn) return;
+      const ok = confirm("Hapus memory ini?");
+      if (!ok) return;
+      await api(`/api/timeline/${btn.dataset.id}`, "DELETE");
+      appState.data = await api("/api/data");
+      buildMemoryGrid();
+    });
 
     setInterval(async () => {
       appState.data = await api("/api/data");

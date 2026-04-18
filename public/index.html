@@ -48,6 +48,7 @@
       <section id="memories" class="memories">
         <div class="section-head">
           <h3>Latest Memories</h3>
+          <button id="openMemoryModal" class="accent small-btn">Tambah Memory</button>
         </div>
         <div class="memory-grid" id="memoryGrid"></div>
       </section>
@@ -60,7 +61,7 @@
 
       <section id="settings" class="settings-note">
         <h3>Settings</h3>
-        <p>Dates are configured inside <code>public/app.js</code> constants.</p>
+        <p>Atur tanggal & akun lewat Telegram command: <code>/setanniv</code>, <code>/setultah</code>, <code>/setname</code>, <code>/setuser</code>, <code>/setpass</code>.</p>
       </section>
     </section>
   </main>
@@ -77,6 +78,7 @@
       </div>
 
       <div class="overlay-actions">
+        <button id="closeOverlayBtn">Tutup</button>
         <button id="musicBtn">Play Music</button>
         <textarea id="wishInput" placeholder="Make a wish..."></textarea>
         <button id="blowBtn" class="accent">Blow Candle</button>
@@ -86,6 +88,21 @@
         Setiap detik bersamamu adalah rumah. Semoga di ulang tahunmu ini, semua doa terbaikmu jadi nyata,
         langkahmu selalu ditemani cahaya, dan kita terus menua dalam cinta yang makin dewasa.
       </p>
+    </div>
+  </section>
+
+  <section id="memoryModal" class="memory-modal hidden">
+    <div class="memory-modal-card glass">
+      <h3>Tambah Memory Baru</h3>
+      <input id="memoryTitle" placeholder="Judul memory" />
+      <input id="memoryLocation" placeholder="Lokasi (opsional)" />
+      <input id="memoryDate" type="date" />
+      <textarea id="memoryDesc" placeholder="Caption singkat"></textarea>
+      <input id="memoryPhoto" type="file" accept="image/*" />
+      <div class="modal-actions">
+        <button id="saveMemoryBtn" class="accent">Simpan</button>
+        <button id="cancelMemoryBtn">Batal</button>
+      </div>
     </div>
   </section>
 
