@@ -1,20 +1,21 @@
 # Web Bucin
 
-Initial implementation now covers:
-- **Phase 1:** Setup & infrastructure
-- **Phase 2 (partial):** Login system (cowo/cewe auth, session cookie, role-based redirect)
+Progress implementasi roadmap:
+- **Phase 1:** Setup & infrastructure ✅
+- **Phase 2:** Login system + Hero typing + Love Counter + Countdown tabs ✅ (initial)
 
-## Included in this commit
-- Next.js (App Router) + TypeScript setup
-- Tailwind CSS setup and color palette mapping
-- Framer Motion hero section
-- Firebase + Supabase client bootstrap files
-- Telegram bot command scaffolding (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
-- Login API endpoints: `POST /api/login`, `POST /api/logout`, `GET /api/me`
-- Protected route setup with `middleware.ts` for `/app/*` and `/login`
-- Role dashboards:
-  - `/app/cowo`
-  - `/app/cewe`
+## Fitur yang sudah aktif
+- Login role-based (`cowo` / `cewe`) dengan session cookie
+- Redirect auth via middleware (`/login` ↔ `/app/{role}`)
+- Hero section dengan typing animation nama pasangan
+- Real-time love counter (hari/jam/menit/detik)
+- Countdown ulang tahun + anniversary dengan tab switcher dan progress bar
+- Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
+
+## Endpoint API auth
+- `POST /api/login`
+- `POST /api/logout`
+- `GET /api/me`
 
 ## Run locally
 1. Copy environment variables:
@@ -30,19 +31,19 @@ Initial implementation now covers:
    npm start
    ```
 4. Open:
+   - `http://localhost:3000/`
    - `http://localhost:3000/login`
-   - login default:
-     - cowo → `cowologin`
-     - cewe → `cewelogin`
+
+Default credentials:
+- cowo → `cowologin`
+- cewe → `cewelogin`
 
 ## Termux quick fix for `ENOENT: package.json`
-If you see:
+Jika muncul:
 
 `npm ERR! enoent Could not read package.json`
 
-that means your local folder is not synced with the latest commit contents.
-
-Run these commands from your repo root:
+jalankan dari root repo:
 
 ```bash
 git status
@@ -50,4 +51,4 @@ git pull
 ls -la
 ```
 
-You should see `package.json`, `next.config.mjs`, and `src/` before running `npm install` or `npm start`.
+Pastikan ada `package.json`, `next.config.mjs`, dan folder `src/` sebelum `npm install`.
