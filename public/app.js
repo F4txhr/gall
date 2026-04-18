@@ -13,6 +13,17 @@ let audioCtx;
 let oscillator;
 let gainNode;
 let musicPlaying = false;
+let celebrated = false;
+
+function toast(message, type = "success") {
+  const root = document.getElementById("toastRoot");
+  if (!root) return;
+  const item = document.createElement("div");
+  item.className = `toast ${type}`;
+  item.textContent = message;
+  root.appendChild(item);
+  setTimeout(() => item.remove(), 2400);
+}
 
 async function api(url, method = "GET", body) {
   const res = await fetch(url, {
@@ -92,7 +103,7 @@ function buildMemoryGrid() {
       (item) => `
         <article class="memory-item">
           <div class="memory-photo" style="background-image:url('${item.imageUrl || ""}');background-size:cover;background-position:center"></div>
-          <small>${item.takenAt || "-"} • ${item.title || "Memory"}</small>
+          <small>${item.takenAt || "-"} • ${item.location || "Unknown"} • ${item.title || "Memory"}</small>
           <button class="delete-memory" data-id="${item.id}">Hapus</button>
         </article>
       `
@@ -146,9 +157,13 @@ function throwGoldConfetti() {
 }
 
 function handleBlowCandle() {
+  if (celebrated) return;
+  celebrated = true;
   document.getElementById("flame").classList.add("hidden");
   throwGoldConfetti();
   document.getElementById("romanticMessage").classList.remove("hidden");
+  document.getElementById("blowBtn").disabled = true;
+  document.getElementById("blowBtn").textContent = "Wish granted ✨";
 }
 
 function shouldShowBirthdayOverlay() {
@@ -198,6 +213,9 @@ function initMemoryModal() {
 
   openBtn.onclick = () => modal.classList.remove("hidden");
   closeBtn.onclick = () => modal.classList.add("hidden");
+  modal.addEventListener("click", (e) => {
+    if (e.target.id === "memoryModal") modal.classList.add("hidden");
+  });
 
   saveBtn.onclick = async () => {
     const form = new FormData();
@@ -215,8 +233,9 @@ function initMemoryModal() {
       appState.data = await api("/api/data");
       buildMemoryGrid();
       modal.classList.add("hidden");
+      toast("Memory berhasil ditambahkan 💛", "success");
     } catch (e) {
-      alert(`Gagal simpan memory: ${e.message}`);
+      toast(`Gagal simpan memory: ${e.message}`, "error");
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = "Simpan";
@@ -277,6 +296,7 @@ async function init() {
       await api(`/api/timeline/${btn.dataset.id}`, "DELETE");
       appState.data = await api("/api/data");
       buildMemoryGrid();
+      toast("Memory dihapus", "success");
     });
 
     setInterval(async () => {
