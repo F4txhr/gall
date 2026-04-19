@@ -78,3 +78,11 @@ Bisa deploy di Vercel sambil tetap pakai Firebase atau Supabase.
 Lihat panduan: `DEPLOYMENT_VERCEL.md` (termasuk strategi storage foto/video untuk mode gratis/public).
 
 Lihat pilihan model gratis: `FREE_AI_OPTIONS.md`.
+
+
+## Troubleshooting AI 401
+Kalau muncul error `invalid_api_key`:
+- Key `gsk_...` = Groq → gunakan `AI_BASE_URL=https://api.groq.com/openai/v1`
+- Key `sk-...` = OpenAI → gunakan `AI_BASE_URL=https://api.openai.com/v1`
+
+Sekarang kode juga punya guardrail otomatis untuk mismatch umum (Groq key + OpenAI base URL).
