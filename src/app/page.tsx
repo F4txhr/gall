@@ -1,3 +1,4 @@
+import { CelebrationFlow } from '@/components/sections/CelebrationFlow';
 import { CountdownTabs } from '@/components/sections/CountdownTabs';
 import { HeroTyping } from '@/components/sections/HeroTyping';
 import { LoveCounter } from '@/components/sections/LoveCounter';
@@ -8,6 +9,7 @@ export default function Home(): JSX.Element {
       <HeroTyping />
       <LoveCounter />
       <CountdownTabs />
+      <CelebrationFlow />
     </main>
   );
 }

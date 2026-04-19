@@ -2,7 +2,8 @@
 
 Progress implementasi roadmap:
 - **Phase 1:** Setup & infrastructure ✅
-- **Phase 2:** Login system + Hero typing + Love Counter + Countdown cards ✅ (initial)
+- **Phase 2:** Login system + Hero typing + Love Counter + Countdown cards ✅
+- **Phase 3 (initial):** Celebration flow + make-a-wish local storage + blow candle click ✅
 
 ## Fitur yang sudah aktif
 - Login role-based (`cowo` / `cewe`) dengan session cookie
@@ -13,6 +14,12 @@ Progress implementasi roadmap:
   - Anniversary
   - Ulang tahun cowo
   - Ulang tahun cewe
+- Celebration flow 5 step:
+  - Ucapan
+  - Tombol lihat kejutan
+  - Kue + lilin
+  - Make a wish (tersimpan localStorage)
+  - Tiup lilin (klik)
 - Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
 
 ## Endpoint API auth
