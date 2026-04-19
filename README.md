@@ -42,7 +42,7 @@ Progress implementasi roadmap:
    ```bash
    npm install
    ```
-3. Isi `AI_API_KEY` di `.env.local` untuk aktifkan AI realtime.
+3. Isi `AI_API_KEY` di `.env.local` untuk aktifkan AI realtime (disarankan Groq free model).
 4. Start development server:
    ```bash
    npm start
@@ -73,3 +73,5 @@ Pastikan ada `package.json`, `next.config.mjs`, dan folder `src/` sebelum `npm i
 ## Deploy ke Vercel
 Bisa deploy di Vercel sambil tetap pakai Firebase atau Supabase.
 Lihat panduan: `DEPLOYMENT_VERCEL.md` (termasuk strategi storage foto/video untuk mode gratis/public).
+
+Lihat pilihan model gratis: `FREE_AI_OPTIONS.md`.

@@ -1,5 +1,5 @@
-const AI_BASE_URL = process.env.AI_BASE_URL ?? 'https://api.openai.com/v1';
-const AI_MODEL = process.env.AI_MODEL ?? 'gpt-4o-mini';
+const AI_BASE_URL = process.env.AI_BASE_URL ?? 'https://api.groq.com/openai/v1';
+const AI_MODEL = process.env.AI_MODEL ?? 'openai/gpt-oss-20b';
 const AI_API_KEY = process.env.AI_API_KEY;
 
 type ChatMessage = { role: 'system' | 'user'; content: string };
