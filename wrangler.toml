@@ -1,0 +1,13 @@
+name = "web-bucin"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".next"
+
+[[d1_databases]]
+binding = "DB" # Nama variabel yang dipakai di kode (process.env.DB)
+database_name = "bucin_db"
+database_id = "16ab331a-ed4a-4eb0-954e-770b0419e5c7"
+
+[[r2_buckets]]
+binding = "BUCKET" # Nama variabel yang dipakai di kode (process.env.BUCKET)
+bucket_name = "bucin-memories"

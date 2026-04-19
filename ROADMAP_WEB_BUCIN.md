@@ -1,64 +1,63 @@
 # 📋 Roadmap Web Bucin
 
 ## Phase 1: Setup & Infrastructure
-- [ ] 1. Setup project structure & tech stack
+- [x] 1. Setup project structure & tech stack
   - Init Next.js project
   - Install dependencies (Tailwind, Framer Motion, Firebase/Supabase, node-telegram-bot-api)
   - Setup folder structure
   - Apply color scheme & global styles
-- [ ] 2. Create Telegram bot for configuration
+- [x] 2. Create Telegram bot for configuration
   - Bot setup & webhook
   - Commands: `/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`
   - ID mapping (siapa A, siapa B)
-- [ ] 3. Setup database schema
+- [x] 3. Setup database schema
 
 ## Phase 2: Core Features
-- [ ] 4. Build login system (cowo/cewe auth)
+- [x] 4. Build login system (cowo/cewe auth)
   - Simple auth (cowologin/cewelogin)
   - Session management
   - Redirect based on role
-- [ ] 5. Create hero section with typing animation
+- [x] 5. Create hero section with typing animation
   - Nama pasangan dengan typing animation
   - Romantic quote fade-in
   - Scroll indicator
-- [ ] 6. Build love counter (real-time duration)
+- [x] 6. Build love counter (real-time duration)
   - Real-time duration counter
   - Animated numbers
   - Label (hari:jam:menit:detik)
-- [ ] 7. Build birthday & anniversary countdown
+- [x] 7. Build birthday & anniversary countdown
   - Countdown timer
   - Progress bar
   - Tab switcher
 
 ## Phase 3: Celebration Features
-- [ ] 8. Create birthday/anniversary celebration flow
-  - Step 1: Ucapan
-  - Step 2: Tombol "Lihat Kejutan"
-  - Step 3: Kue + lilin
-  - Step 4: Make a wish
-  - Step 5: Tiup lilin
-- [ ] 9. Build cake with candle & flame animation (CSS/SVG)
-  - SVG/CSS cake illustration
-  - Flame animation (CSS keyframes + gradient)
-  - Angka lilin custom
-- [ ] 10. Implement make-a-wish feature with storage
-  - Input field
-  - Save to database
-  - Auto backup ke Telegram
-- [ ] 11. Add mic detection & blow candle interaction
-  - Web Audio API
-  - Detect blow sound
-  - Alternative: click button
+- [x] 8. Create birthday/anniversary celebration flow (AI-Powered)
+  - [x] Step 1: Ucapan & Headline Dinamis
+  - [x] Step 2: Tombol "Start Celebration" (Auto-play musik)
+  - [x] Step 3: Generasi pesan romantis unik via AI (Groq/OpenAI)
+  - [x] Step 4: Make a wish (Input & Simpan)
+  - [x] Step 5: Slideshow kenangan otomatis
+- [x] 9. Build AI Message & Quote Generator
+  - [x] API route `/api/ai/message` & `/api/ai/quote`
+  - [x] Auto-sanitization (hapus `<think>`, limit kata)
+  - [x] Feature "Generate Lagi" untuk pesan baru
+- [ ] 10. Implement persistent storage for wishes
+  - [x] Save to localStorage
+  - [ ] Sync ke database (Supabase/Firebase) agar pasangan bisa lihat
+  - [ ] Auto backup wish ke Telegram bot
+- [ ] 11. Interactive Memory Slideshow
+  - [x] Auto-play slide (interval 2.5s)
+  - [x] Source from `NEXT_PUBLIC_MEMORY_IMAGE_URLS`
+  - [ ] Fitur upload foto langsung dari UI
 
 ## Phase 4: Animations & Effects
 - [ ] 12. Create confetti animation (canvas-based)
   - Canvas-based particles
   - Physics (gravity, wind)
-  - Trigger pas lilin padam
-- [ ] 13. Add sound effects (instrumental, applause)
-  - Instrumental ultah (auto-play)
-  - Tepuk tangan (pas ditiup)
-  - Volume control
+  - Trigger saat "Start Celebration" atau "Save Wish"
+- [x] 13. Add sound effects & music
+  - [x] Instrumental ultah/romantis (auto-play on start)
+  - [ ] Volume control & mute toggle
 - [ ] 14. Build real-time silhouette viewer
   - SVG custom silhouette (bukan emoji)
   - Online detection (WebSocket/Firebase)

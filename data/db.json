@@ -1,0 +1,41 @@
+{
+  "settings": {
+    "relationshipStart": "2022-11-27",
+    "anniversaryDate": "2022-11-27",
+    "myBirthday": "2002-07-20",
+    "partnerBirthday": "2004-11-12",
+    "meName": "fatkurrois",
+    "partnerName": "ady setyawati",
+    "telegramBotToken": "",
+    "telegramChatId": ""
+  },
+  "timeline": [
+    {
+      "id": "4b8565d8-0bd5-4ee5-89c2-de9cd1d0d1d7",
+      "title": "hehe",
+      "description": "",
+      "location": "jepara",
+      "takenAt": "",
+      "imageUrl": "/uploads/1776368778548-521821412.jpg",
+      "uploadedBy": "aku",
+      "uploadedAt": "2026-04-16T19:46:18.584Z"
+    }
+  ],
+  "sentReminders": {},
+  "credentials": {
+    "me": {
+      "username": "aku",
+      "password": "sayang123"
+    },
+    "partner": {
+      "username": "kamu",
+      "password": "ady"
+    }
+  },
+  "telegram": {
+    "lastUpdateId": 556503348
+  },
+  "simulation": {
+    "mode": "off"
+  }
+}
