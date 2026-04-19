@@ -19,9 +19,9 @@ function getDuration(startIso: string): Duration {
 
 function CounterBox({ label, value }: { label: string; value: number }): JSX.Element {
   return (
-    <div className="min-w-24 rounded-xl bg-bucin-cream px-4 py-3 text-center text-bucin-bg shadow-md">
-      <div className="text-2xl font-bold md:text-3xl">{value}</div>
-      <div className="mt-1 text-xs uppercase tracking-wide">{label}</div>
+    <div className="min-w-24 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-center backdrop-blur-sm">
+      <div className="text-2xl font-bold text-bucin-gold md:text-3xl">{value}</div>
+      <div className="mt-1 text-xs uppercase tracking-wide text-bucin-textSecondary">{label}</div>
     </div>
   );
 }
@@ -38,12 +38,12 @@ export function LoveCounter(): JSX.Element {
   }, []);
 
   const title = useMemo(
-    () => `Sudah bersama sejak ${new Date(relationshipConfig.relationshipStart).toLocaleDateString('id-ID')}`,
+    () => `Bersama sejak ${new Date(relationshipConfig.relationshipStart).toLocaleDateString('id-ID')}`,
     []
   );
 
   return (
-    <section className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <section id="counter" className="mx-auto flex min-h-[85vh] w-full max-w-6xl flex-col items-center justify-center px-6 text-center">
       <h2 className="text-3xl font-semibold md:text-4xl">Love Counter</h2>
       <p className="mt-3 text-bucin-textSecondary">{title}</p>
 

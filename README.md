@@ -9,6 +9,7 @@ Progress implementasi roadmap:
 - Login role-based (`cowo` / `cewe`) dengan session cookie
 - Redirect auth via middleware (`/login` ↔ `/app/{role}`)
 - Hero section dengan typing animation nama pasangan
+- Navbar sticky + section navigation untuk tampilan lebih profesional
 - Real-time love counter (hari/jam/menit/detik)
 - Countdown tampil langsung semua per-card ke bawah:
   - Anniversary
