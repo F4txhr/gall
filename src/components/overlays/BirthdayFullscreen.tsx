@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { relationshipConfig } from '@/lib/relationship';
 
 type BirthdayTarget = {
@@ -9,14 +10,20 @@ type BirthdayTarget = {
   date: string;
 };
 
+type Props = {
+  force?: boolean;
+};
+
 function isTodayBirthday(dateIso: string): boolean {
   const now = new Date();
   const target = new Date(dateIso);
   return now.getDate() === target.getDate() && now.getMonth() === target.getMonth();
 }
 
-export function BirthdayFullscreen(): JSX.Element | null {
+export function BirthdayFullscreen({ force = false }: Props): JSX.Element | null {
   const [dismissed, setDismissed] = useState(false);
+  const params = useSearchParams();
+  const forcedByQuery = params.get('birthday') === '1';
 
   const activeBirthday = useMemo(() => {
     const list: BirthdayTarget[] = [
@@ -32,10 +39,12 @@ export function BirthdayFullscreen(): JSX.Element | null {
       },
     ];
 
-    return list.find((item) => isTodayBirthday(item.date)) ?? null;
+    return list.find((item) => isTodayBirthday(item.date)) ?? list[0];
   }, []);
 
-  if (!activeBirthday || dismissed) {
+  const shouldShow = force || forcedByQuery || isTodayBirthday(relationshipConfig.birthdayCowoDate) || isTodayBirthday(relationshipConfig.birthdayCeweDate);
+
+  if (!shouldShow || dismissed || !activeBirthday) {
     return null;
   }
 
@@ -45,7 +54,7 @@ export function BirthdayFullscreen(): JSX.Element | null {
         <p className="text-sm uppercase tracking-[0.3em] text-bucin-gold">Birthday Mode</p>
         <h1 className="mt-4 text-4xl font-bold md:text-6xl">Happy Birthday, {activeBirthday.name}! 🎉</h1>
         <p className="mt-5 text-bucin-textSecondary md:text-lg">
-          Hari ini layar utama sengaja jadi mode perayaan full screen khusus untuk {activeBirthday.key === 'cowo' ? 'cowo' : 'cewe'}.
+          Mode ini full-screen. Bisa dites kapan saja lewat <span className="font-semibold text-bucin-gold">/?birthday=1</span> atau <span className="font-semibold text-bucin-gold">/birthday</span>.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

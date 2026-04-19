@@ -14,7 +14,9 @@ Progress implementasi roadmap:
   - Anniversary
   - Ulang tahun cowo
   - Ulang tahun cewe
-- **Birthday full-screen takeover** saat tanggal hari ini cocok dengan ultah cowo/cewe
+- **Birthday full-screen takeover** saat ultah + bisa dipaksa tampil untuk test:
+  - `/?birthday=1`
+  - `/birthday`
 - Celebration flow 5 step (UI dipoles dengan stepper + cake visual):
   - Ucapan
   - Tombol lihat kejutan
