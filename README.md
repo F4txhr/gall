@@ -20,15 +20,18 @@ Progress implementasi roadmap:
   - `/birthday`
 - Celebration flow baru (tanpa kue):
   1. Tombol **Start Celebration** (auto-play lagu jika `NEXT_PUBLIC_BIRTHDAY_AUDIO_URL` diisi)
-  2. Kata-kata spesial (random generator, bisa ganti supaya tidak sama terus)
-  3. Make a Wish (disimpan ke localStorage)
-  4. Slideshow kenangan dari `NEXT_PUBLIC_MEMORY_IMAGE_URLS` atau localStorage upload list
+  2. Kata-kata spesial pakai **AI API beneran** (`POST /api/ai/message`) + generate ulang
+  3. Romantic quote hero pakai **AI API beneran** (`POST /api/ai/quote`)
+  4. Make a Wish (disimpan ke localStorage)
+  5. Slideshow kenangan dari `NEXT_PUBLIC_MEMORY_IMAGE_URLS` atau localStorage upload list
 - Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
 
 ## Endpoint API auth
 - `POST /api/login`
 - `POST /api/logout`
 - `GET /api/me`
+- `POST /api/ai/message`
+- `POST /api/ai/quote`
 
 ## Run locally
 1. Copy environment variables:
@@ -39,11 +42,12 @@ Progress implementasi roadmap:
    ```bash
    npm install
    ```
-3. Start development server:
+3. Isi `AI_API_KEY` di `.env.local` untuk aktifkan AI realtime.
+4. Start development server:
    ```bash
    npm start
    ```
-4. Open:
+5. Open:
    - `http://localhost:3000/`
    - `http://localhost:3000/login`
 
@@ -65,7 +69,6 @@ ls -la
 ```
 
 Pastikan ada `package.json`, `next.config.mjs`, dan folder `src/` sebelum `npm install`.
-
 
 ## Deploy ke Vercel
 Bisa deploy di Vercel sambil tetap pakai Firebase atau Supabase.

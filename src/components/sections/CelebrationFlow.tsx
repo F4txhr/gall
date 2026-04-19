@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { generateCelebrationMessage } from '@/lib/messageGenerator';
 import { relationshipConfig } from '@/lib/relationship';
 
 type Step = 'start' | 'message' | 'wish' | 'memories';
@@ -32,6 +31,7 @@ export function CelebrationFlow(): JSX.Element {
   const [wishInput, setWishInput] = useState('');
   const [savedWish, setSavedWish] = useState('');
   const [message, setMessage] = useState('');
+  const [generating, setGenerating] = useState(false);
   const [memories, setMemories] = useState<string[]>([]);
   const [slideIndex, setSlideIndex] = useState(0);
 
@@ -51,6 +51,23 @@ export function CelebrationFlow(): JSX.Element {
     return () => clearInterval(timer);
   }, [step, memories]);
 
+  const generateMessage = async (): Promise<void> => {
+    setGenerating(true);
+    const res = await fetch('/api/ai/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: birthdayName,
+        context: 'Pasangan yang saling support dan sedang merayakan momen ulang tahun.',
+      }),
+    });
+
+    setGenerating(false);
+    if (!res.ok) return;
+    const data = (await res.json()) as { text?: string };
+    if (data.text) setMessage(data.text);
+  };
+
   const startExperience = async (): Promise<void> => {
     const audioUrl = process.env.NEXT_PUBLIC_BIRTHDAY_AUDIO_URL;
     if (audioUrl) {
@@ -63,12 +80,8 @@ export function CelebrationFlow(): JSX.Element {
       }
     }
 
-    setMessage(generateCelebrationMessage(birthdayName));
+    await generateMessage();
     setStep('message');
-  };
-
-  const regenerateMessage = (): void => {
-    setMessage(generateCelebrationMessage(birthdayName));
   };
 
   const saveWish = (): void => {
@@ -94,7 +107,7 @@ export function CelebrationFlow(): JSX.Element {
     <section className="flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
       <h2 className="text-3xl font-semibold md:text-4xl">Celebration Experience</h2>
       <p className="mt-3 max-w-2xl text-bucin-textSecondary">
-        Tanpa kue pun tetap romantis: start lagu → kata-kata unik → make a wish → slideshow kenangan.
+        Tanpa kue pun tetap romantis: start lagu → kata-kata unik (AI) → make a wish → slideshow kenangan.
       </p>
 
       <div className="mt-8 w-full max-w-3xl rounded-3xl border border-bucin-textSecondary/20 bg-gradient-to-b from-[#4A4A4A] to-[#3d3d3d] p-7 shadow-2xl">
@@ -103,7 +116,7 @@ export function CelebrationFlow(): JSX.Element {
         {step === 'start' ? (
           <div className="mt-6 space-y-4">
             <p className="text-bucin-textSecondary">
-              Saat tombol start ditekan, musik diputar lalu kata-kata spesial akan muncul otomatis.
+              Saat tombol start ditekan, musik diputar lalu kata-kata spesial AI akan muncul otomatis.
             </p>
             <button
               type="button"
@@ -118,15 +131,15 @@ export function CelebrationFlow(): JSX.Element {
         {step === 'message' ? (
           <div className="mt-6 space-y-5">
             <blockquote className="rounded-2xl border border-bucin-gold/30 bg-bucin-bg/40 p-5 text-left leading-relaxed">
-              “{message}”
+              {generating ? 'Generating kata-kata romantis...' : `“${message}”`}
             </blockquote>
             <div className="flex flex-wrap justify-center gap-3">
               <button
                 type="button"
-                onClick={regenerateMessage}
+                onClick={generateMessage}
                 className="rounded-xl border border-bucin-gold px-4 py-2 font-semibold text-bucin-text"
               >
-                Ganti kata-kata
+                Generate lagi
               </button>
               <button
                 type="button"

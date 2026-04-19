@@ -10,6 +10,7 @@ export function HeroTyping(): JSX.Element {
     []
   );
   const [typed, setTyped] = useState('');
+  const [quote, setQuote] = useState(relationshipConfig.quote);
 
   useEffect(() => {
     let index = 0;
@@ -23,6 +24,25 @@ export function HeroTyping(): JSX.Element {
 
     return () => clearInterval(timer);
   }, [titleText]);
+
+  useEffect(() => {
+    const run = async (): Promise<void> => {
+      const res = await fetch('/api/ai/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerA: relationshipConfig.partnerA,
+          partnerB: relationshipConfig.partnerB,
+        }),
+      });
+
+      if (!res.ok) return;
+      const data = (await res.json()) as { quote?: string };
+      if (data.quote) setQuote(data.quote);
+    };
+
+    run();
+  }, []);
 
   return (
     <section className="mx-auto flex min-h-[88vh] w-full max-w-6xl flex-col items-center justify-center px-6 text-center">
@@ -42,7 +62,7 @@ export function HeroTyping(): JSX.Element {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.25 }}
       >
-        {relationshipConfig.quote}
+        {quote}
       </motion.p>
 
       <motion.div
