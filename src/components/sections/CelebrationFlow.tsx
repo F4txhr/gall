@@ -1,151 +1,145 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { generateCelebrationMessage } from '@/lib/messageGenerator';
+import { relationshipConfig } from '@/lib/relationship';
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 'start' | 'message' | 'wish' | 'memories';
 
-const STORAGE_KEY = 'web_bucin_wishes';
+const STORAGE_WISH = 'web_bucin_wishes';
+const STORAGE_MEMORIES = 'web_bucin_memories';
 
-const stepLabels: Record<Step, string> = {
-  1: 'Ucapan',
-  2: 'Kejutan',
-  3: 'Kue',
-  4: 'Wish',
-  5: 'Tiup Lilin',
-};
+function getInitialMemories(): string[] {
+  if (typeof window === 'undefined') return [];
 
-function StepBadge({ activeStep, step }: { activeStep: Step; step: Step }): JSX.Element {
-  const active = step <= activeStep;
+  const fromStorage = JSON.parse(localStorage.getItem(STORAGE_MEMORIES) ?? '[]') as string[];
+  if (fromStorage.length > 0) return fromStorage;
 
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div
-        className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-bold transition ${
-          active ? 'border-bucin-gold bg-bucin-gold text-bucin-bg' : 'border-bucin-textSecondary/40 text-bucin-textSecondary'
-        }`}
-      >
-        {step}
-      </div>
-      <span className="text-xs text-bucin-textSecondary">{stepLabels[step]}</span>
-    </div>
-  );
-}
+  const seeded = (process.env.NEXT_PUBLIC_MEMORY_IMAGE_URLS ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 
-function CakeVisual({ candleOff }: { candleOff: boolean }): JSX.Element {
-  return (
-    <div className="relative mx-auto mt-2 w-[280px]">
-      <div className="absolute left-1/2 top-1 -translate-x-1/2">
-        <div className="mx-auto h-10 w-2 rounded bg-[#F5E6A1]" />
-        {!candleOff ? (
-          <motion.div
-            className="mx-auto h-6 w-6 rounded-full bg-gradient-to-b from-[#FFD166] via-[#FF9B5C] to-[#FF6B35] shadow-[0_0_24px_#FF9B5C]"
-            animate={{ scale: [1, 1.08, 1], opacity: [0.95, 1, 0.95] }}
-            transition={{ repeat: Infinity, duration: 0.9 }}
-          />
-        ) : (
-          <div className="mx-auto h-6 w-6 rounded-full bg-slate-500/60" />
-        )}
-      </div>
+  if (seeded.length > 0) {
+    localStorage.setItem(STORAGE_MEMORIES, JSON.stringify(seeded));
+  }
 
-      <div className="mt-14 h-14 rounded-t-[70px] border-4 border-[#D4A574] bg-[#8B6F47]" />
-      <div className="h-5 rounded-b-2xl bg-[#C97B5A]" />
-      <div className="mx-auto mt-3 h-2 w-56 rounded-full bg-bucin-text/20" />
-    </div>
-  );
+  return seeded;
 }
 
 export function CelebrationFlow(): JSX.Element {
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>('start');
   const [wishInput, setWishInput] = useState('');
   const [savedWish, setSavedWish] = useState('');
-  const [candleOff, setCandleOff] = useState(false);
+  const [message, setMessage] = useState('');
+  const [memories, setMemories] = useState<string[]>([]);
+  const [slideIndex, setSlideIndex] = useState(0);
 
-  const headline = useMemo(() => {
-    switch (step) {
-      case 1:
-        return 'Selamat merayakan hari spesial 💛';
-      case 2:
-        return 'Ada kejutan kecil buat kamu';
-      case 3:
-        return 'Saatnya kue ulang tahun';
-      case 4:
-        return 'Tulis harapan terbaikmu';
-      case 5:
-        return 'Tiup lilinnya sekarang';
-      default:
-        return '';
+  const birthdayName = relationshipConfig.partnerB;
+
+  useEffect(() => {
+    setMemories(getInitialMemories());
+  }, []);
+
+  useEffect(() => {
+    if (step !== 'memories' || memories.length === 0) return;
+
+    const timer = setInterval(() => {
+      setSlideIndex((prev) => (prev + 1) % memories.length);
+    }, 2500);
+
+    return () => clearInterval(timer);
+  }, [step, memories]);
+
+  const startExperience = async (): Promise<void> => {
+    const audioUrl = process.env.NEXT_PUBLIC_BIRTHDAY_AUDIO_URL;
+    if (audioUrl) {
+      try {
+        const audio = new Audio(audioUrl);
+        audio.volume = 0.7;
+        await audio.play();
+      } catch {
+        // autoplay can be blocked by browser; continue silently
+      }
     }
-  }, [step]);
 
-  const nextStep = (): void => {
-    setStep((prev) => (prev < 5 ? ((prev + 1) as Step) : prev));
+    setMessage(generateCelebrationMessage(birthdayName));
+    setStep('message');
+  };
+
+  const regenerateMessage = (): void => {
+    setMessage(generateCelebrationMessage(birthdayName));
   };
 
   const saveWish = (): void => {
     if (!wishInput.trim()) return;
 
-    const old = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as string[];
+    const old = JSON.parse(localStorage.getItem(STORAGE_WISH) ?? '[]') as string[];
     const updated = [wishInput.trim(), ...old].slice(0, 20);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(STORAGE_WISH, JSON.stringify(updated));
+
     setSavedWish(wishInput.trim());
     setWishInput('');
-    setStep(5);
+    setStep('memories');
   };
+
+  const headline = useMemo(() => {
+    if (step === 'start') return 'Mulai momen spesial';
+    if (step === 'message') return 'Kata-kata spesial untukmu';
+    if (step === 'wish') return 'Make a Wish';
+    return 'Kenangan kita ✨';
+  }, [step]);
 
   return (
     <section className="flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
-      <h2 className="text-3xl font-semibold md:text-4xl">Celebration Moment</h2>
+      <h2 className="text-3xl font-semibold md:text-4xl">Celebration Experience</h2>
       <p className="mt-3 max-w-2xl text-bucin-textSecondary">
-        Saya poles tampilannya biar lebih clean: stepper, card elegan, dan visual kue yang lebih proper.
+        Tanpa kue pun tetap romantis: start lagu → kata-kata unik → make a wish → slideshow kenangan.
       </p>
 
-      <div className="mt-8 flex flex-wrap items-start justify-center gap-4">
-        <StepBadge activeStep={step} step={1} />
-        <StepBadge activeStep={step} step={2} />
-        <StepBadge activeStep={step} step={3} />
-        <StepBadge activeStep={step} step={4} />
-        <StepBadge activeStep={step} step={5} />
-      </div>
+      <div className="mt-8 w-full max-w-3xl rounded-3xl border border-bucin-textSecondary/20 bg-gradient-to-b from-[#4A4A4A] to-[#3d3d3d] p-7 shadow-2xl">
+        <p className="text-sm uppercase tracking-[0.2em] text-bucin-textSecondary">{headline}</p>
 
-      <motion.div
-        key={step}
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        className="mt-8 w-full max-w-2xl rounded-3xl border border-bucin-textSecondary/20 bg-gradient-to-b from-[#4A4A4A] to-[#3d3d3d] p-7 shadow-2xl"
-      >
-        <p className="text-sm uppercase tracking-[0.2em] text-bucin-textSecondary">Step {step} · {stepLabels[step]}</p>
-        <h3 className="mt-3 text-2xl font-semibold">{headline}</h3>
-
-        {step === 1 ? (
+        {step === 'start' ? (
           <div className="mt-6 space-y-4">
-            <p className="text-bucin-textSecondary">Semoga harimu dipenuhi tawa, cinta, dan kebahagiaan tanpa batas.</p>
-            <button type="button" onClick={nextStep} className="rounded-xl bg-bucin-gold px-5 py-2.5 font-semibold text-bucin-bg">
-              Lanjut
+            <p className="text-bucin-textSecondary">
+              Saat tombol start ditekan, musik diputar lalu kata-kata spesial akan muncul otomatis.
+            </p>
+            <button
+              type="button"
+              onClick={startExperience}
+              className="rounded-xl bg-bucin-gold px-6 py-3 font-semibold text-bucin-bg"
+            >
+              Start Celebration
             </button>
           </div>
         ) : null}
 
-        {step === 2 ? (
-          <div className="mt-6 space-y-4">
-            <p className="text-bucin-textSecondary">Klik tombol di bawah untuk membuka kejutan romantisnya.</p>
-            <button type="button" onClick={nextStep} className="rounded-xl bg-bucin-gold px-5 py-2.5 font-semibold text-bucin-bg">
-              Buka Kejutan
-            </button>
-          </div>
-        ) : null}
-
-        {step === 3 ? (
+        {step === 'message' ? (
           <div className="mt-6 space-y-5">
-            <CakeVisual candleOff={candleOff} />
-            <button type="button" onClick={nextStep} className="rounded-xl bg-bucin-gold px-5 py-2.5 font-semibold text-bucin-bg">
-              Lanjut Make a Wish
-            </button>
+            <blockquote className="rounded-2xl border border-bucin-gold/30 bg-bucin-bg/40 p-5 text-left leading-relaxed">
+              “{message}”
+            </blockquote>
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={regenerateMessage}
+                className="rounded-xl border border-bucin-gold px-4 py-2 font-semibold text-bucin-text"
+              >
+                Ganti kata-kata
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('wish')}
+                className="rounded-xl bg-bucin-gold px-4 py-2 font-semibold text-bucin-bg"
+              >
+                Lanjut Make a Wish
+              </button>
+            </div>
           </div>
         ) : null}
 
-        {step === 4 ? (
+        {step === 'wish' ? (
           <div className="mt-6 space-y-4 text-left">
             <label className="block text-sm text-bucin-textSecondary">Tulis wish kamu:</label>
             <textarea
@@ -156,26 +150,34 @@ export function CelebrationFlow(): JSX.Element {
               placeholder="Semoga kita selalu sehat, langgeng, dan saling jaga..."
             />
             <button type="button" onClick={saveWish} className="rounded-xl bg-bucin-gold px-5 py-2.5 font-semibold text-bucin-bg">
-              Simpan Wish
+              Simpan Wish & Tampilkan Kenangan
             </button>
           </div>
         ) : null}
 
-        {step === 5 ? (
+        {step === 'memories' ? (
           <div className="mt-6 space-y-4">
-            <CakeVisual candleOff={candleOff} />
-            <button
-              type="button"
-              onClick={() => setCandleOff(true)}
-              className="rounded-xl bg-bucin-gold px-5 py-2.5 font-semibold text-bucin-bg"
-            >
-              Tiup Lilin (klik)
-            </button>
-            {candleOff ? <p className="font-medium text-bucin-gold">Yay! Lilin padam, semoga wish kamu terkabul ✨</p> : null}
             {savedWish ? <p className="text-bucin-textSecondary">Wish terakhir: “{savedWish}”</p> : null}
+
+            {memories.length > 0 ? (
+              <div className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-bucin-gold/30 bg-black/30 p-3">
+                <img
+                  src={memories[slideIndex]}
+                  alt={`Kenangan ${slideIndex + 1}`}
+                  className="h-[320px] w-full rounded-xl object-cover"
+                />
+                <p className="mt-3 text-sm text-bucin-textSecondary">
+                  Slide {slideIndex + 1} / {memories.length}
+                </p>
+              </div>
+            ) : (
+              <p className="text-bucin-textSecondary">
+                Belum ada foto kenangan. Nanti setelah upload fitur jadi, slideshow akan tampil otomatis di sini.
+              </p>
+            )}
           </div>
         ) : null}
-      </motion.div>
+      </div>
     </section>
   );
 }

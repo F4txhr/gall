@@ -3,7 +3,7 @@
 Progress implementasi roadmap:
 - **Phase 1:** Setup & infrastructure ✅
 - **Phase 2:** Login system + Hero typing + Love Counter + Countdown cards ✅
-- **Phase 3 (initial):** Celebration flow + make-a-wish local storage + blow candle click ✅
+- **Phase 3 (initial):** Celebration experience tanpa kue (kata-kata + wish + slideshow) ✅
 
 ## Fitur yang sudah aktif
 - Login role-based (`cowo` / `cewe`) dengan session cookie
@@ -17,12 +17,11 @@ Progress implementasi roadmap:
 - **Birthday full-screen takeover** saat ultah + bisa dipaksa tampil untuk test:
   - `/?birthday=1`
   - `/birthday`
-- Celebration flow 5 step (UI dipoles dengan stepper + cake visual):
-  - Ucapan
-  - Tombol lihat kejutan
-  - Kue + lilin
-  - Make a wish (tersimpan localStorage)
-  - Tiup lilin (klik)
+- Celebration flow baru (tanpa kue):
+  1. Tombol **Start Celebration** (auto-play lagu jika `NEXT_PUBLIC_BIRTHDAY_AUDIO_URL` diisi)
+  2. Kata-kata spesial (random generator, bisa ganti supaya tidak sama terus)
+  3. Make a Wish (disimpan ke localStorage)
+  4. Slideshow kenangan dari `NEXT_PUBLIC_MEMORY_IMAGE_URLS` atau localStorage upload list
 - Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
 
 ## Endpoint API auth
