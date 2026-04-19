@@ -14,7 +14,7 @@ Progress implementasi roadmap:
   - Anniversary
   - Ulang tahun cowo
   - Ulang tahun cewe
-- Celebration flow 5 step:
+- Celebration flow 5 step (UI dipoles dengan stepper + cake visual):
   - Ucapan
   - Tombol lihat kejutan
   - Kue + lilin
