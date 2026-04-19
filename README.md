@@ -69,4 +69,4 @@ Pastikan ada `package.json`, `next.config.mjs`, dan folder `src/` sebelum `npm i
 
 ## Deploy ke Vercel
 Bisa deploy di Vercel sambil tetap pakai Firebase atau Supabase.
-Lihat panduan: `DEPLOYMENT_VERCEL.md`.
+Lihat panduan: `DEPLOYMENT_VERCEL.md` (termasuk strategi storage foto/video untuk mode gratis/public).

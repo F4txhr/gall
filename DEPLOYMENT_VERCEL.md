@@ -17,19 +17,38 @@
    - Pilih region Vercel yang dekat dengan region project Firebase/Supabase.
 4. **File upload**
    - Hindari simpan file di local filesystem Vercel (ephemeral).
-   - Simpan ke Firebase Storage / Supabase Storage.
+   - Simpan ke Firebase Storage / Supabase Storage / object storage.
 5. **Telegram bot**
    - Untuk production, lebih stabil pakai webhook endpoint daripada polling long-running.
+
+## Kalau targetnya publik dan tetap gratis: cukup nggak?
+Untuk skala publik, **free tier biasanya cepat habis** kalau banyak foto/video.
+
+### Ringkasan batas gratis (cek ulang sebelum go-live)
+- **Firebase Storage (lihat pricing resmi Firebase):** ada kuota gratis, contohnya storage gratis terbatas (terlihat no-cost 5 GB di pricing), lalu usage berikutnya berbayar.
+  - Source: https://firebase.google.com/pricing
+- **Supabase Free:** storage 1 GB, database 500 MB, egress free tier terbatas (lihat billing docs Supabase).
+  - Source: https://supabase.com/docs/guides/platform/billing-on-supabase
+  - Source: https://supabase.com/docs/guides/storage/pricing
+  - Source: https://supabase.com/docs/guides/storage/serving/bandwidth
+- **Cloudflare R2:** ada free tier storage dan dikenal tanpa egress fee langsung dari R2 (lihat pricing resmi R2).
+  - Source: https://developers.cloudflare.com/r2/pricing/
+
+## Saran realistis buat kamu (hemat biaya)
+Kalau kamu mau **gratisan semaksimal mungkin** dan ada potensi user publik:
+1. **Vercel (Hobby)** untuk frontend + API ringan.
+2. **Supabase Free** untuk auth + metadata (wishes, user, relasi foto).
+3. **Cloudflare R2** untuk file foto/video (lebih aman untuk traffic download publik).
+4. Aktifkan **budget alert** / monitoring usage dari awal.
 
 ## Kapan pilih Firebase vs Supabase?
 - **Firebase cocok** jika mau cepat pakai ecosystem Google (Firestore, Storage, FCM).
 - **Supabase cocok** jika ingin PostgreSQL, SQL query, dan kontrol schema lebih kuat.
 
-## Saran untuk project ini
-Karena roadmap kamu butuh realtime + upload foto + backup/automation:
-- Pilih salah satu provider dulu sebagai source of truth (jangan dua-duanya sekaligus di awal).
-- Prioritas implementasi stabil:
-  1. Auth + profile pasangan
-  2. Wishes + memories table/collection
-  3. Storage foto kenangan
-  4. Realtime online status
+## Saran implementasi bertahap untuk project ini
+Karena roadmap butuh realtime + upload foto + backup/automation:
+1. Auth + profile pasangan
+2. Wishes + memories table/collection
+3. Storage foto/video
+4. Realtime online status
+5. Telegram backup/notif
