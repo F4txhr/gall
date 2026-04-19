@@ -26,6 +26,7 @@ Progress implementasi roadmap:
   5. Slideshow kenangan dari `NEXT_PUBLIC_MEMORY_IMAGE_URLS` atau localStorage upload list
 - Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
 - AI route sekarang log output ke server console untuk debugging hasil generate
+- Quote AI disanitasi otomatis (hapus `<think>`, potong maksimal 16 kata)
 
 > Catatan: default config sekarang **bukan OpenAI langsung**, tapi **Groq (OpenAI-compatible API)**.
 
