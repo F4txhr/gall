@@ -10,7 +10,7 @@ export function HeroTyping(): JSX.Element {
     []
   );
   const [typed, setTyped] = useState('');
-  const [quote, setQuote] = useState(relationshipConfig.quote);
+  const [quote, setQuote] = useState('Generating romantic quote from AI...');
 
   useEffect(() => {
     let index = 0;
@@ -36,7 +36,11 @@ export function HeroTyping(): JSX.Element {
         }),
       });
 
-      if (!res.ok) return;
+      if (!res.ok) {
+        setQuote('AI quote tidak tersedia. Cek AI_API_KEY / provider logs.');
+        return;
+      }
+
       const data = (await res.json()) as { quote?: string };
       if (data.quote) setQuote(data.quote);
     };

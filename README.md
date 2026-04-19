@@ -25,6 +25,7 @@ Progress implementasi roadmap:
   4. Make a Wish (disimpan ke localStorage)
   5. Slideshow kenangan dari `NEXT_PUBLIC_MEMORY_IMAGE_URLS` atau localStorage upload list
 - Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
+- AI route sekarang log output ke server console untuk debugging hasil generate
 
 > Catatan: default config sekarang **bukan OpenAI langsung**, tapi **Groq (OpenAI-compatible API)**.
 
