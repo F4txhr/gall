@@ -26,6 +26,8 @@ Progress implementasi roadmap:
   5. Slideshow kenangan dari `NEXT_PUBLIC_MEMORY_IMAGE_URLS` atau localStorage upload list
 - Telegram bot scaffold commands (`/setname`, `/setbirthday`, `/setanniversary`, `/setpassword`, `/settelegram`, `/status`, `/wish`)
 
+> Catatan: default config sekarang **bukan OpenAI langsung**, tapi **Groq (OpenAI-compatible API)**.
+
 ## Endpoint API auth
 - `POST /api/login`
 - `POST /api/logout`

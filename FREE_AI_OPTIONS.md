@@ -1,6 +1,8 @@
 # Free AI model options (untuk generate kata-kata & romantic quote)
 
 ## Rekomendasi utama (langsung kompatibel dengan kode sekarang)
+OpenAI-compatible ≠ OpenAI langsung.
+
 ### 1) Groq Free Plan (OpenAI-compatible)
 - Base URL: `https://api.groq.com/openai/v1`
 - Contoh model: `openai/gpt-oss-20b`
