@@ -26,33 +26,43 @@ function CounterBox({ label, value }: { label: string; value: number }): JSX.Ele
   );
 }
 
-export function LoveCounter(): JSX.Element {
-  const [duration, setDuration] = useState<Duration>(() => getDuration(relationshipConfig.relationshipStart));
+export function LoveCounter({ config }: { config?: any }): JSX.Element {
+  const [duration, setDuration] = useState<Duration | null>(null);
+  const startDate = config?.relationshipStart || relationshipConfig.relationshipStart;
 
   useEffect(() => {
+    // Set initial duration on client
+    setDuration(getDuration(startDate));
+
     const timer = setInterval(() => {
-      setDuration(getDuration(relationshipConfig.relationshipStart));
+      setDuration(getDuration(startDate));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [startDate]);
 
   const title = useMemo(
-    () => `Bersama sejak ${new Date(relationshipConfig.relationshipStart).toLocaleDateString('id-ID')}`,
-    []
+    () => `Bersama sejak ${new Date(startDate).toLocaleDateString('id-ID')}`,
+    [startDate]
   );
 
-  return (
-    <section id="counter" className="mx-auto flex min-h-[85vh] w-full max-w-6xl flex-col items-center justify-center px-6 text-center">
-      <h2 className="text-3xl font-semibold md:text-4xl">Love Counter</h2>
-      <p className="mt-3 text-bucin-textSecondary">{title}</p>
+  if (!duration) {
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-3 opacity-0">
+         <CounterBox label="Hari" value={0} />
+      </div>
+    );
+  }
 
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+  return (
+    <div id="counter" className="mx-auto flex w-full flex-col items-center justify-center text-center">
+      <div className="flex flex-wrap items-center justify-center gap-3">
         <CounterBox label="Hari" value={duration.days} />
         <CounterBox label="Jam" value={duration.hours} />
         <CounterBox label="Menit" value={duration.minutes} />
         <CounterBox label="Detik" value={duration.seconds} />
       </div>
-    </section>
+      <p className="mt-4 text-[10px] text-bucin-textSecondary uppercase tracking-widest">{title}</p>
+    </div>
   );
 }

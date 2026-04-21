@@ -75,7 +75,7 @@ ls -la
 Pastikan ada `package.json`, `next.config.mjs`, dan folder `src/` sebelum `npm install`.
 
 ## Deploy ke Vercel
-Bisa deploy di Vercel sambil tetap pakai Firebase atau Supabase.
+Bisa deploy di Vercel sambil tetap pakai Supabase.
 Lihat panduan: `DEPLOYMENT_VERCEL.md` (termasuk strategi storage foto/video untuk mode gratis/public).
 
 Lihat pilihan model gratis: `FREE_AI_OPTIONS.md`.

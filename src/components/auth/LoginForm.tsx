@@ -26,12 +26,14 @@ export function LoginForm(): JSX.Element {
     setLoading(false);
 
     if (!res.ok || !data.ok || !data.role) {
-      setError(data.message ?? 'Login gagal.');
+      setError(data.message || 'Login gagal. Cek kembali password kamu.');
       return;
     }
 
     router.push(`/app/${data.role}`);
-    router.refresh();
+    setTimeout(() => {
+      router.refresh();
+    }, 500);
   };
 
   return (

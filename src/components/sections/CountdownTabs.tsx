@@ -1,71 +1,83 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { relationshipConfig } from '@/lib/relationship';
 
-type CountdownItem = {
-  title: string;
-  dateIso: string;
+type TimeLeft = {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
 };
 
-function getTimeRemaining(targetIso: string): number {
-  return Math.max(0, new Date(targetIso).getTime() - Date.now());
+function getTimeLeft(targetDate: string): TimeLeft {
+  const now = new Date().getTime();
+  const target = new Date(targetDate).getTime();
+  const diff = Math.max(0, target - now);
+
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((diff % (1000 * 60)) / 1000),
+  };
 }
 
-function formatRemaining(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+function CompactCard({ title, date, label }: { title: string; date: string; label: string }) {
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(getTimeLeft(date));
 
-  return `${days}h ${hours}j ${minutes}m ${seconds}d`;
-}
+  useEffect(() => {
+    const timer = setInterval(() => setTimeLeft(getTimeLeft(date)), 1000);
+    return () => clearInterval(timer);
+  }, [date]);
 
-function buildProgress(targetIso: string): number {
-  const now = Date.now();
-  const target = new Date(targetIso).getTime();
-  const oneYearMs = 365 * 24 * 60 * 60 * 1000;
-  const elapsed = oneYearMs - Math.max(0, target - now);
-  return Math.max(0, Math.min(100, (elapsed / oneYearMs) * 100));
-}
-
-function CountdownCard({ title, dateIso }: CountdownItem): JSX.Element {
-  const remainingMs = getTimeRemaining(dateIso);
-  const remainingText = formatRemaining(remainingMs);
-  const progress = buildProgress(dateIso);
+  const formattedDate = new Date(date).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   return (
-    <article className="w-full max-w-2xl rounded-2xl bg-bucin-card p-6 text-left shadow-xl">
-      <h3 className="text-xl font-semibold">{title}</h3>
-      <p className="mt-2 text-bucin-textSecondary">
-        Target: {new Date(dateIso).toLocaleDateString('id-ID', { dateStyle: 'full' })}
-      </p>
-      <p className="mt-5 text-2xl font-bold text-bucin-gold">{remainingText}</p>
-
-      <div className="mt-5 h-3 w-full rounded-full bg-bucin-bg">
-        <div className="h-3 rounded-full bg-bucin-gold transition-all" style={{ width: `${progress}%` }} />
+    <div className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-5 transition-all hover:bg-white/[0.06]">
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-bucin-gold/60">{label}</span>
+      <h3 className="mt-1 text-lg font-bold text-white">{title}</h3>
+      <p className="mt-1 text-[11px] text-bucin-textSecondary">Target: {formattedDate}</p>
+      
+      <div className="mt-4 flex items-baseline gap-1 font-mono">
+        <span className="text-2xl font-bold text-bucin-pink">{timeLeft.days}</span>
+        <span className="text-[10px] text-bucin-textSecondary mr-2">h</span>
+        <span className="text-2xl font-bold text-bucin-pink">{timeLeft.hours}</span>
+        <span className="text-[10px] text-bucin-textSecondary mr-2">j</span>
+        <span className="text-2xl font-bold text-bucin-pink">{timeLeft.minutes}</span>
+        <span className="text-[10px] text-bucin-textSecondary mr-2">m</span>
+        <span className="text-2xl font-bold text-bucin-pink">{timeLeft.seconds}</span>
+        <span className="text-[10px] text-bucin-textSecondary">d</span>
       </div>
-    </article>
+    </div>
   );
 }
 
-export function CountdownTabs(): JSX.Element {
-  const countdownItems: CountdownItem[] = [
-    { title: 'Anniversary', dateIso: relationshipConfig.anniversaryDate },
-    { title: 'Ulang Tahun Cowo', dateIso: relationshipConfig.birthdayCowoDate },
-    { title: 'Ulang Tahun Cewe', dateIso: relationshipConfig.birthdayCeweDate },
-  ];
+export function CountdownTabs({ config }: { config?: any }): JSX.Element {
+  const settings = config || relationshipConfig;
 
   return (
-    <section className="flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
-      <h2 className="text-3xl font-semibold md:text-4xl">Countdown</h2>
-      <p className="mt-3 text-bucin-textSecondary">Anniv, ultah cowo, dan ultah cewe langsung tampil semua per card.</p>
-
-      <div className="mt-8 flex w-full flex-col items-center gap-5">
-        {countdownItems.map((item) => (
-          <CountdownCard key={item.title} title={item.title} dateIso={item.dateIso} />
-        ))}
-      </div>
-    </section>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <CompactCard 
+        label="Anniversary" 
+        title="Hari Jadi Kita" 
+        date={settings.anniversaryDate} 
+      />
+      <CompactCard 
+        label="Ulang Tahun" 
+        title={`Ultah ${settings.partnerA}`} 
+        date={settings.birthdayCowoDate} 
+      />
+      <CompactCard 
+        label="Ulang Tahun" 
+        title={`Ultah ${settings.partnerB}`} 
+        date={settings.birthdayCeweDate} 
+      />
+    </div>
   );
 }

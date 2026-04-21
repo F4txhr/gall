@@ -3,7 +3,7 @@
 ## Phase 1: Setup & Infrastructure
 - [x] 1. Setup project structure & tech stack
   - Init Next.js project
-  - Install dependencies (Tailwind, Framer Motion, Firebase/Supabase, node-telegram-bot-api)
+  - Install dependencies (Tailwind, Framer Motion, Supabase, node-telegram-bot-api)
   - Setup folder structure
   - Apply color scheme & global styles
 - [x] 2. Create Telegram bot for configuration
@@ -43,7 +43,7 @@
   - [x] Feature "Generate Lagi" untuk pesan baru
 - [ ] 10. Implement persistent storage for wishes
   - [x] Save to localStorage
-  - [ ] Sync ke database (Supabase/Firebase) agar pasangan bisa lihat
+  - [ ] Sync ke database (Supabase) agar pasangan bisa lihat
   - [ ] Auto backup wish ke Telegram bot
 - [ ] 11. Interactive Memory Slideshow
   - [x] Auto-play slide (interval 2.5s)
@@ -60,7 +60,7 @@
   - [ ] Volume control & mute toggle
 - [ ] 14. Build real-time silhouette viewer
   - SVG custom silhouette (bukan emoji)
-  - Online detection (WebSocket/Firebase)
+  - Online detection (WebSocket/Supabase)
   - Animasi breathing/pulse
   - Text: "Si X sedang merayakan ultahmu"
 
@@ -134,7 +134,7 @@
 ## 📱 Tech Stack
 - **Frontend:** Next.js + Tailwind CSS
 - **Animasi:** Framer Motion + Canvas
-- **Realtime:** Firebase/Supabase atau WebSocket
+- **Realtime:** Supabase atau WebSocket
 - **Telegram Bot:** Node.js (node-telegram-bot-api)
-- **Database:** Firebase/Supabase
+- **Database:** Supabase
 - **Audio:** Web Audio API

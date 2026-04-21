@@ -20,12 +20,16 @@ export function CelebrationFlow(): JSX.Element | null {
   const [introText, setIntroText] = useState('');
   const [wishInput, setWishInput] = useState('');
   const [partnerWish, setPartnerWish] = useState('');
-  const [aiMessage, setAiMessage] = useState('');
+  const [introAiMessage, setIntroAiMessage] = useState('');
+  const [finalAiMessage, setFinalAiMessage] = useState('');
   const [displayedText, setDisplayedText] = useState('');
   
   const [isTyping, setIsTyping] = useState(false);
+  const [introTypingDone, setIntroTypingDone] = useState(false);
+  const [showcaseTypingDone, setShowcaseTypingDone] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const forcedTest = searchParams.get('celebrate') === '1';
   const forcedType = searchParams.get('type') as 'birthday' | 'anniversary' | null;
@@ -74,23 +78,34 @@ export function CelebrationFlow(): JSX.Element | null {
   }, [shouldShow, userRole, step, isAnniv]);
 
   useEffect(() => {
-    if (step === 'showcase' && aiMessage) {
+    if (step === 'showcase' && finalAiMessage && !showcaseTypingDone) {
       setDisplayedText(''); // Reset displayed text for new message
+      setIsTyping(true);
       let i = 0;
       const interval = setInterval(() => {
-        setDisplayedText(aiMessage.slice(0, i));
         i++;
-        if (i > aiMessage.length) {
+        setDisplayedText(finalAiMessage.slice(0, i));
+        if (i >= finalAiMessage.length) {
           clearInterval(interval);
+          setIsTyping(false);
+          setShowcaseTypingDone(true);
           setTimeout(() => setStep('completed'), 15000);
         }
-      }, 55);
+      }, 40);
       return () => clearInterval(interval);
     }
-  }, [step, aiMessage]);
+  }, [step, finalAiMessage, showcaseTypingDone]);
+
+  useEffect(() => {
+    if (step === 'showcase' && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [displayedText, step]);
 
   const generateIntro = async () => {
+    setIntroAiMessage('');
     setIsLoading(true);
+    setIntroTypingDone(false);
     const contextStr = isAnniv 
       ? `BUAT INTRO ANNIV: Hari ini Anniversary ke-${status?.years}. Buat kata-kata pembuka yang sangat puitis, kaget waktu cepat berlalu, penuh haru, dan menyentuh hati. Gunakan sapaan romantis. Max 35 kata.`
       : `BUAT INTRO ULTAH: Hari ini Ulang Tahun ke-${status?.years} untuk ${status?.name}. Buat kata-kata kaget dia sudah bertambah dewasa, penuh syukur, dan sangat kagum padanya. Gunakan sapaan romantis dan kata "kamu". Max 35 kata.`;
@@ -100,42 +115,37 @@ export function CelebrationFlow(): JSX.Element | null {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: isAnniv ? 'Sayang' : status?.name,
-        context: contextStr
+        context: contextStr,
+        maxWords: 50
       }),
     });
     const data = await res.json();
-    setAiMessage(data.text);
+    setIntroAiMessage(data.text);
     setIsLoading(false);
   };
 
   useEffect(() => {
-    if (step === 'intro' && aiMessage && !isTyping) { // Only type if not already typing
-      setIntroText(''); // Reset intro text for new message
+    if (step === 'intro' && introAiMessage && !introTypingDone) { 
+      setIntroText(''); 
       setIsTyping(true);
       let i = 0;
       const interval = setInterval(() => {
-        setIntroText(aiMessage.slice(0, i));
         i++;
-        if (i > aiMessage.length) {
+        setIntroText(introAiMessage.slice(0, i));
+        if (i >= introAiMessage.length) {
           clearInterval(interval);
-          setIsTyping(false); // Selesai mengetik intro
-          if (isAnniv) {
-            setTimeout(() => setStep('wish'), 3000); // Jeda 3 detik setelah intro selesai diketik
-          } else {
-             // Untuk ultah, langsung ke wish setelah intro selesai
-             setTimeout(() => setStep('wish'), 3000);
-          }
+          setIsTyping(false); 
+          setIntroTypingDone(true);
         }
-      }, 60); // Kecepatan mengetik intro
+      }, 60); 
       return () => clearInterval(interval);
     }
-  }, [step, aiMessage, isAnniv, isTyping]);
+  }, [step, introAiMessage, introTypingDone]);
 
 
   const startSequence = async () => {
-    setStep('idle'); // Balik ke idle dulu untuk reset state
-    await generateIntro(); // Langsung generate intro
-    setStep('intro'); // Pindah ke intro
+    setStep('intro'); // Pindah ke intro dulu agar muncul loading state
+    await generateIntro(); // Baru fetch AI
     // Play Audio (dipindah ke sini agar bisa dimainkan saat intro sudah muncul)
     const audioUrl = status?.type === 'anniversary' ? '/audio/anniversary.mp3' : '/audio/birthday.mp3';
     audioRef.current = new Audio(audioUrl);
@@ -178,6 +188,12 @@ export function CelebrationFlow(): JSX.Element | null {
       }
     }
     
+    // Kirim notifikasi ke Telegram
+    fetch('/api/celebrate/notify', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'wish_submitted', senderRole: userRole })
+    });
+    
     generateFinalShowcase();
   };
 
@@ -188,6 +204,7 @@ export function CelebrationFlow(): JSX.Element | null {
   }, [partnerWish, isAnniv, wishInput, isLoading]);
 
   const generateFinalShowcase = async () => {
+    setFinalAiMessage('');
     setIsLoading(true);
     const combinedWishes = isAnniv 
       ? `Wish dari aku: "${wishInput}" dan wish dari pasanganku: "${partnerWish}"`
@@ -202,23 +219,18 @@ export function CelebrationFlow(): JSX.Element | null {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: isAnniv ? 'Sayang' : status?.name,
-        context: contextStr
+        context: contextStr,
+        maxWords: 200
       }),
     });
     const data = await res.json();
-    setAiMessage(data.text);
+    setFinalAiMessage(data.text);
     
-    // Play Audio (Sudah di startSequence, tidak perlu ulang)
-    // audioRef.current = new Audio(audioUrl);
-    // audioRef.current.loop = true;
-    // audioRef.current.play().catch(() => {});
-
+    setShowcaseTypingDone(false);
     setStep('showcase');
     setIsLoading(false);
   };
 
-  const eventName = status?.type === 'anniversary' ? 'Anniversary' : 'Ulang Tahun';
-  const eventYears = status?.years || 0;
   const targetName = status?.type === 'birthday' ? (status as any).name : 'Kita';
 
   if (!shouldShow) return null;
@@ -255,11 +267,16 @@ export function CelebrationFlow(): JSX.Element | null {
               {step === 'intro' && (
                 <motion.div key="intro" className="text-center max-w-3xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                    <div className="text-3xl md:text-5xl font-serif italic text-white leading-relaxed glow-pink">
-                      {isLoading ? 'Meresapi waktu...' : `“${introText}”`}
-                      <span className="inline-block w-1 h-8 bg-bucin-pink animate-pulse ml-2"></span> {/* Ukuran cursor kecil */}
+                      {!introAiMessage ? 'Meresapi waktu...' : (
+                        <>
+                          “{introText}
+                          <span className={`inline-block w-[3px] h-[0.8em] bg-bucin-pink ml-1 ${isTyping ? 'opacity-100' : 'animate-pulse'}`}></span>
+                          ”
+                        </>
+                      )}
                    </div>
-                   {!isLoading && ( // Tombol Lanjutkan muncul setelah intro selesai diketik
-                     <button onClick={() => isAnniv ? setStep('wish') : setStep('wish')} className="mt-12 rounded-xl border border-white/20 px-8 py-3 text-white/60">Lanjutkan ➔</button>
+                   {introAiMessage && introTypingDone && (
+                     <button onClick={() => setStep('wish')} className="mt-12 rounded-xl border border-white/20 px-8 py-3 text-white/60">Lanjutkan ➔</button>
                    )}
                 </motion.div>
               )}
@@ -280,12 +297,16 @@ export function CelebrationFlow(): JSX.Element | null {
               {step === 'showcase' && (
                 <motion.div key="showcase" className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-20 overflow-hidden">
                    <div className="absolute inset-0 z-10 opacity-40"><FallingMemories /></div>
-                   <div className="z-20 text-center max-w-4xl max-h-[80vh] overflow-y-auto custom-scrollbar pr-4">
+                   <div ref={scrollRef} className="z-20 text-center max-w-4xl max-h-[80vh] overflow-y-auto custom-scrollbar pr-4 scroll-smooth">
                       <div className="text-2xl md:text-4xl font-serif italic text-white leading-relaxed glow-pink">
-                        {displayedText}
-                        <span className="inline-block w-1 h-8 bg-bucin-pink animate-pulse ml-3"></span>
+                        {!finalAiMessage ? 'Meresapi doa...' : (
+                          <>
+                            {displayedText}
+                            <span className={`inline-block w-[3px] h-[0.8em] bg-bucin-pink ml-2 ${isTyping ? 'opacity-100' : 'animate-pulse'}`}></span>
+                          </>
+                        )}
                       </div>
-                      {!isTyping && <div className="mt-12 animate-bounce text-4xl">{isAnniv ? '💑🥂💖' : '🎈🎂🎉'}</div>}
+                      {!isTyping && finalAiMessage && <div className="mt-12 animate-bounce text-4xl">{isAnniv ? '💑🥂💖' : '🎈🎂🎉'}</div>}
                    </div>
                 </motion.div>
               )}
@@ -296,7 +317,13 @@ export function CelebrationFlow(): JSX.Element | null {
 
       {step === 'completed' && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[50]">
-          <button onClick={() => { setStep('idle'); setDisplayedText(''); }} className="card-bucin px-8 py-3 font-bold text-bucin-pink">Putar Ulang Rekaman 💫</button>
+          <button onClick={() => { 
+            setStep('idle'); 
+            setIntroAiMessage(''); 
+            setFinalAiMessage(''); 
+            setIntroTypingDone(false); 
+            setShowcaseTypingDone(false); 
+          }} className="card-bucin px-8 py-3 font-bold text-bucin-pink">Putar Ulang Rekaman 💫</button>
         </div>
       )}
     </div>

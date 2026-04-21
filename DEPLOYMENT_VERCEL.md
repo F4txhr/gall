@@ -1,11 +1,11 @@
-# Deploy Web Bucin di Vercel + Firebase/Supabase
+# Deploy Web Bucin di Vercel + Supabase
 
 ## Bisa nggak dipakai bareng?
-**Bisa.** Deploy frontend/backend Next.js ke Vercel tetap kompatibel dengan Firebase ataupun Supabase.
+**Bisa.** Deploy frontend/backend Next.js ke Vercel tetap kompatibel dengan Supabase.
 
 ## Rekomendasi arsitektur
 - **Vercel**: hosting Next.js (App Router + API routes).
-- **Firebase / Supabase**: database, auth, storage, realtime (sesuai kebutuhan fitur).
+- **Supabase**: database, auth, storage, realtime (sesuai kebutuhan fitur).
 
 ## Catatan penting saat deploy
 1. **Environment variables**
@@ -14,10 +14,10 @@
 2. **Server secret jangan pakai `NEXT_PUBLIC_`**
    - Semua key rahasia (service role key, bot token) harus server-only env.
 3. **Region & latency**
-   - Pilih region Vercel yang dekat dengan region project Firebase/Supabase.
+   - Pilih region Vercel yang dekat dengan region project Supabase.
 4. **File upload**
    - Hindari simpan file di local filesystem Vercel (ephemeral).
-   - Simpan ke Firebase Storage / Supabase Storage / object storage.
+   - Simpan ke Supabase Storage / Cloudflare R2 / object storage.
 5. **Telegram bot**
    - Untuk production, lebih stabil pakai webhook endpoint daripada polling long-running.
 
@@ -25,8 +25,6 @@
 Untuk skala publik, **free tier biasanya cepat habis** kalau banyak foto/video.
 
 ### Ringkasan batas gratis (cek ulang sebelum go-live)
-- **Firebase Storage (lihat pricing resmi Firebase):** ada kuota gratis, contohnya storage gratis terbatas (terlihat no-cost 5 GB di pricing), lalu usage berikutnya berbayar.
-  - Source: https://firebase.google.com/pricing
 - **Supabase Free:** storage 1 GB, database 500 MB, egress free tier terbatas (lihat billing docs Supabase).
   - Source: https://supabase.com/docs/guides/platform/billing-on-supabase
   - Source: https://supabase.com/docs/guides/storage/pricing
@@ -41,8 +39,7 @@ Kalau kamu mau **gratisan semaksimal mungkin** dan ada potensi user publik:
 3. **Cloudflare R2** untuk file foto/video (lebih aman untuk traffic download publik).
 4. Aktifkan **budget alert** / monitoring usage dari awal.
 
-## Kapan pilih Firebase vs Supabase?
-- **Firebase cocok** jika mau cepat pakai ecosystem Google (Firestore, Storage, FCM).
+## Kenapa pilih Supabase?
 - **Supabase cocok** jika ingin PostgreSQL, SQL query, dan kontrol schema lebih kuat.
 
 ## Saran implementasi bertahap untuk project ini

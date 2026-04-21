@@ -23,5 +23,12 @@ export async function POST(request: NextRequest) {
     await sendTelegramNotification(partnerRole, `💌 *Panggilan Sayang!* 💌\n\n${senderName} sedang menunggumu di web untuk merayakan momen spesial ini bersama. Yuk online sekarang! ✨`);
   }
 
+  if (action === 'wish_submitted') {
+    const partnerRole = senderRole === 'cowo' ? 'cewe' : 'cowo';
+    const senderName = senderRole === 'cowo' ? relationshipConfig.partnerA : relationshipConfig.partnerB;
+    
+    await sendTelegramNotification(partnerRole, `✨ *Kabar Gembira!* ✨\n\n${senderName} baru saja mengirimkan doanya untuk ${status.type === 'anniversary' ? 'hubungan kita' : 'hari istimewa ini'}. Klik untuk melihatnya nanti! 💖`);
+  }
+
   return NextResponse.json({ ok: true });
 }
