@@ -3,7 +3,9 @@ import { Inter, Dancing_Script } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import { FilmRoll } from '@/components/layout/FilmRoll';
-import { FloatingHearts } from '@/components/overlays/FloatingHearts';
+import { OnlineIndicator } from '@/components/layout/OnlineIndicator';
+import { HeartPulseOverlay } from '@/components/overlays/HeartPulseOverlay';
+import { PresenceSilhouette } from '@/components/overlays/PresenceSilhouette';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const dancingScript = Dancing_Script({ subsets: ['latin'], variable: '--font-dancing' });
@@ -14,23 +16,24 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Web Bucin',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#FF69B4',
+  themeColor: '#0a0a0a',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.Node;
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="id">
@@ -40,8 +43,10 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${dancingScript.variable} font-sans min-h-screen bg-bucin-bg text-bucin-text antialiased scroll-smooth overflow-x-hidden`}>
         <Navbar />
+        <OnlineIndicator />
         <FilmRoll />
-        <FloatingHearts />
+        <HeartPulseOverlay />
+        <PresenceSilhouette />
         <main className="relative min-h-screen">{children}</main>
       </body>
     </html>

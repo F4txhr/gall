@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getLiveSettings } from '@/lib/relationship';
 
-export function FloatingMusicPlayer(): JSX.Element {
+export function FloatingMusicPlayer() {
   const [musicUrl, setMusicUrl] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isVisible, setIsHidden] = useState(false);
@@ -52,7 +52,7 @@ export function FloatingMusicPlayer(): JSX.Element {
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
         whileHover={{ scale: 1.1 }}
-        whileActive={{ scale: 0.9 }}
+        whileTap={{ scale: 0.9 }}
         className={`relative flex h-14 w-14 items-center justify-center rounded-full shadow-2xl transition-colors ${
           isPlaying ? 'bg-bucin-pink' : 'bg-white/10 backdrop-blur-md border border-white/20'
         }`}

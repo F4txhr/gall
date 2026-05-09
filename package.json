@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next dev",
+    "dev": "next dev --webpack",
+    "build": "NODE_OPTIONS=\"--max-old-space-size=2048\" next build --webpack",
+    "start": "next dev --webpack",
     "start:prod": "next start",
     "lint": "next lint"
   },
@@ -16,14 +16,15 @@
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.23.24",
     "googleapis": "^171.4.0",
-    "next": "15.3.2",
+    "next": "^16.2.4",
     "node-telegram-bot-api": "^0.66.0",
-    "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.15.18",
+    "@types/node-telegram-bot-api": "^0.64.14",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "autoprefixer": "^10.4.21",

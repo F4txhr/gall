@@ -17,7 +17,7 @@ type WishItem = {
   liked_by_cewe: boolean;
 };
 
-export function DateWishlist({ userRole }: { userRole: string | null }): JSX.Element {
+export function DateWishlist({ userRole }: { userRole: string | null }) {
   const [items, setItems] = useState<WishItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [input, setTitle] = useState('');
@@ -174,7 +174,7 @@ export function DateWishlist({ userRole }: { userRole: string | null }): JSX.Ele
                     </div>
                     
                     {userRole && (
-                      <button onClick={() => deleteWish(id => deleteWish(item.id))} className="opacity-0 group-hover:opacity-40 hover:opacity-100 transition-opacity text-[10px] text-white/50 uppercase font-bold tracking-tighter">Hapus</button>
+                      <button onClick={() => deleteWish(item.id)} className="opacity-0 group-hover:opacity-40 hover:opacity-100 transition-opacity text-[10px] text-white/50 uppercase font-bold tracking-tighter">Hapus</button>
                     )}
                   </div>
                 </div>

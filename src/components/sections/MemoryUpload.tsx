@@ -10,7 +10,7 @@ type WishItem = {
   status: string;
 };
 
-export function MemoryUpload(): JSX.Element {
+export function MemoryUpload() {
   const [isOpen, setIsOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [caption, setCaption] = useState('');

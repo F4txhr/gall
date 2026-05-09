@@ -65,7 +65,7 @@ function SingleRoll({
   );
 }
 
-export function FilmRoll(): JSX.Element {
+export function FilmRoll() {
   const [mounted, setMounted] = useState(false);
   const [memories, setMemories] = useState<string[]>([]);
 

@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
-import { SESSION_COOKIE } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
-export async function POST(): Promise<NextResponse> {
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE, '', { path: '/', maxAge: 0 });
-  return res;
+export async function GET() {
+  const cookieStore = await cookies();
+  
+  // Hapus cookie sesi
+  cookieStore.delete('user_role');
+  
+  // Arahkan kembali ke halaman login
+  return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'));
+}
+
+// Tetap sediakan POST sebagai cadangan
+export async function POST() {
+  const cookieStore = await cookies();
+  cookieStore.delete('user_role');
+  return NextResponse.json({ ok: true });
 }

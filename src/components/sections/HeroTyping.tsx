@@ -2,12 +2,11 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { relationshipConfig } from '@/lib/relationship';
 
-export function HeroTyping({ config }: { config?: any }): JSX.Element {
-  const partnerA = config?.partnerA || relationshipConfig.partnerA;
-  const partnerB = config?.partnerB || relationshipConfig.partnerB;
-  const dbQuote = config?.quote;
+export function HeroTyping({ config }: { config?: any }) {
+  const partnerA = config?.partnerA || '';
+  const partnerB = config?.partnerB || '';
+  const dbQuote = config?.quote || '';
 
   const [displayedA, setDisplayedA] = useState('');
   const [displayedB, setDisplayedB] = useState('');
@@ -15,33 +14,31 @@ export function HeroTyping({ config }: { config?: any }): JSX.Element {
   
   const [displayedQuote, setDisplayedQuote] = useState('');
   const [currentQuote, setCurrentQuote] = useState('');
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
 
-  // 1. Munculkan Jantung Dulu sebagai latar
+  // 1. Jantung muncul saat nama ada
   useEffect(() => {
-    const timer = setTimeout(() => setShowHeart(true), 500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (partnerA && partnerB) {
+      setTimeout(() => setShowHeart(true), 500);
+    }
+  }, [partnerA, partnerB]);
 
-  // 2. Ketik Nama A (Cowo) - Setelah Jantung Muncul
+  // 2. Ketik Nama A
   useEffect(() => {
-    if (!showHeart) return;
+    if (!partnerA || !showHeart) return;
     let i = 0;
     setDisplayedA('');
     const timer = setInterval(() => {
       setDisplayedA(partnerA.slice(0, i));
       i++;
-      if (i > partnerA.length) {
-        clearInterval(timer);
-        // Setelah Nama A selesai, mulai ketik Nama B
-      }
+      if (i > partnerA.length) clearInterval(timer);
     }, 100);
     return () => clearInterval(timer);
   }, [showHeart, partnerA]);
 
-  // 3. Ketik Nama B (Cewe) - Setelah Nama A selesai (dikasih delay)
+  // 3. Ketik Nama B
   useEffect(() => {
-    if (displayedA.length < partnerA.length) return;
+    if (!partnerB || !partnerA || displayedA.length < partnerA.length) return;
     let i = 0;
     const delay = setTimeout(() => {
       const timer = setInterval(() => {
@@ -54,23 +51,35 @@ export function HeroTyping({ config }: { config?: any }): JSX.Element {
     return () => clearTimeout(delay);
   }, [displayedA, partnerA, partnerB]);
 
-  // 4. Fetch Quote AI
+  // 4. Fetch Quote AI (SEALU DINAMIS)
   useEffect(() => {
     const fetchAIQuote = async () => {
-      if (dbQuote && dbQuote !== 'Setiap detik bersamamu adalah rumah.') {
-        setCurrentQuote(dbQuote);
-      } else {
+      // Jika di database tidak ada quote custom (masih default/kosong), panggil AI
+      if (!dbQuote || dbQuote.includes('Setiap detik') || dbQuote === '') {
+        setIsLoadingAi(true);
         try {
-          const res = await fetch('/api/ai/quote', { method: 'POST' });
+          const res = await fetch('/api/ai/quote', { 
+            method: 'POST',
+            cache: 'no-store' // Paksa ambil baru
+          });
           const data = await res.json();
-          if (data.ok) setCurrentQuote(data.text);
-          else setCurrentQuote(relationshipConfig.quote);
-        } catch { setCurrentQuote(relationshipConfig.quote); }
+          if (data.ok) {
+            setCurrentQuote(data.text);
+          } else {
+            setCurrentQuote(dbQuote || "Cinta kita abadi.");
+          }
+        } catch {
+          setCurrentQuote(dbQuote);
+        } finally {
+          setIsLoadingAi(false);
+        }
+      } else {
+        setCurrentQuote(dbQuote);
       }
-      setIsFirstLoad(false);
     };
-    if (isFirstLoad) fetchAIQuote();
-  }, [dbQuote, isFirstLoad]);
+
+    if (partnerA && partnerB) fetchAIQuote();
+  }, [dbQuote, partnerA, partnerB]);
 
   // 5. Ketik Quote
   useEffect(() => {
@@ -85,11 +94,18 @@ export function HeroTyping({ config }: { config?: any }): JSX.Element {
     return () => clearInterval(timer);
   }, [currentQuote, displayedB, partnerB]);
 
+  if (!partnerA || !partnerB) {
+    return (
+      <section className="flex min-h-[70vh] items-center justify-center">
+        <div className="h-8 w-48 animate-pulse rounded-full bg-white/5" />
+      </section>
+    );
+  }
+
   return (
     <section className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
       <div className="relative flex flex-col items-center justify-center w-full max-w-2xl h-[300px] md:h-[400px]">
         
-        {/* BACKGROUND: Hollow Heart Animated */}
         <div className="absolute inset-0 flex items-center justify-center z-0 opacity-30 md:opacity-40">
            <AnimatePresence>
              {showHeart && (
@@ -114,9 +130,7 @@ export function HeroTyping({ config }: { config?: any }): JSX.Element {
            </AnimatePresence>
         </div>
 
-        {/* FRONT: Staggered Names */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
-           {/* Nama Cowo (Atas - Kiri) */}
            <motion.h1 
             className="font-dancing glow-gold text-4xl md:text-8xl font-bold text-white self-center md:self-start md:ml-10 mb-2 md:-mb-4 whitespace-nowrap"
             initial={{ x: -20, opacity: 0 }}
@@ -126,7 +140,6 @@ export function HeroTyping({ config }: { config?: any }): JSX.Element {
              {(displayedA.length > 0 && displayedA.length < partnerA.length) && <span className="animate-pulse font-sans ml-1 text-3xl md:text-5xl">|</span>}
            </motion.h1>
 
-           {/* Nama Cewe (Bawah - Kanan) */}
            <motion.h1 
             className="font-dancing glow-gold text-4xl md:text-8xl font-bold text-white self-center md:self-end md:mr-10 whitespace-nowrap"
             initial={{ x: 20, opacity: 0 }}
@@ -138,10 +151,12 @@ export function HeroTyping({ config }: { config?: any }): JSX.Element {
         </div>
       </div>
 
-      {/* Quote AI */}
-      <div className="mt-12 max-w-2xl mx-auto min-h-[3rem] relative z-10">
-        <p className="text-lg italic text-bucin-textSecondary md:text-2xl font-serif">
-          {displayedQuote ? `“${displayedQuote}”` : (showHeart && displayedB.length === partnerB.length ? '...' : '')}
+      <div className="mt-12 max-w-2xl mx-auto min-h-[3rem] relative z-10 px-4">
+        {isLoadingAi && !displayedQuote && (
+            <p className="text-sm text-bucin-pink animate-pulse font-mono tracking-widest uppercase">Sedang menenun kata romantis...</p>
+        )}
+        <p className="text-lg italic text-bucin-textSecondary md:text-2xl font-serif leading-relaxed">
+          {displayedQuote ? `“${displayedQuote}”` : (showHeart && displayedB.length === partnerB.length && !isLoadingAi ? '...' : '')}
         </p>
       </div>
 
@@ -151,8 +166,8 @@ export function HeroTyping({ config }: { config?: any }): JSX.Element {
         animate={{ opacity: 1 }}
         transition={{ delay: 2 }}
       >
-        <a href="#countdown" className="rounded-xl bg-bucin-gold px-10 py-4 font-bold text-bucin-bg shadow-lg shadow-bucin-gold/10 hover:scale-110 transition-transform active:scale-95">
-          Lihat Countdown ✨
+        <a href="#countdown" className="rounded-xl bg-bucin-gold px-10 py-4 font-bold text-bucin-bg shadow-lg shadow-bucin-gold/10 hover:scale-110 transition-transform active:scale-95 text-sm uppercase tracking-widest">
+          Momen Mendatang ➔
         </a>
       </motion.div>
     </section>

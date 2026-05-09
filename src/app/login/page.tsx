@@ -1,6 +1,6 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 
-export default function LoginPage(): JSX.Element {
+export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-bucin-bg px-4">
       <LoginForm />

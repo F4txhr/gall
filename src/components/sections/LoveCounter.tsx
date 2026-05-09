@@ -17,7 +17,7 @@ function getDuration(startIso: string): Duration {
   return { days, hours, minutes, seconds };
 }
 
-function CounterBox({ label, value }: { label: string; value: number }): JSX.Element {
+function CounterBox({ label, value }: { label: string; value: number }) {
   return (
     <div className="min-w-24 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-center backdrop-blur-sm">
       <div className="text-2xl font-bold text-bucin-gold md:text-3xl">{value}</div>
@@ -26,7 +26,7 @@ function CounterBox({ label, value }: { label: string; value: number }): JSX.Ele
   );
 }
 
-export function LoveCounter({ config }: { config?: any }): JSX.Element {
+export function LoveCounter({ config }: { config?: any }) {
   const [duration, setDuration] = useState<Duration | null>(null);
   const startDate = config?.relationshipStart || relationshipConfig.relationshipStart;
 

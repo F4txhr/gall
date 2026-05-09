@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { relationshipConfig, getCelebrationStatus } from '@/lib/relationship';
 import { FallingMemories } from '@/components/overlays/FallingMemories';
-import { PresenceSilhouette } from '@/components/overlays/PresenceSilhouette';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useSearchParams } from 'next/navigation';
@@ -11,11 +10,12 @@ import { supabase } from '@/lib/supabase';
 
 type Step = 'idle' | 'waiting_partner' | 'intro' | 'wish' | 'showcase' | 'completed';
 
-export function CelebrationFlow(): JSX.Element | null {
+export function CelebrationFlow({ config }: { config?: any }) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>('idle');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [partnerOnline, setPartnerOnline] = useState(false);
+  const [partnerName, setPartnerName] = useState('');
   
   const [introText, setIntroText] = useState('');
   const [wishInput, setWishInput] = useState('');
@@ -39,293 +39,193 @@ export function CelebrationFlow(): JSX.Element | null {
       return { 
         type: forcedType, 
         years: forcedType === 'birthday' ? 20 : 2, 
-        name: forcedType === 'birthday' ? relationshipConfig.partnerB : 'Kita' 
+        name: forcedType === 'birthday' ? (config?.partnerB || relationshipConfig.partnerB) : 'Kita' 
       };
     }
-    return getCelebrationStatus(relationshipConfig);
-  }, [forcedTest, forcedType]);
+    const currentConfig = config || relationshipConfig;
+    return getCelebrationStatus(currentConfig);
+  }, [config, forcedTest, forcedType]);
 
   const isAnniv = status?.type === 'anniversary';
   const shouldShow = !!status || forcedTest;
 
   useEffect(() => {
-    if (!supabase || !shouldShow) return;
+    if (!supabase) return;
+    fetch('/api/me').then(res => res.json()).then(data => {
+        setUserRole(data.role);
+        const pName = data.role === 'cowo' ? (data.settings?.partnerB || relationshipConfig.partnerB) : (data.settings?.partnerA || relationshipConfig.partnerA);
+        setPartnerName(pName);
+    });
+  }, []);
 
-    fetch('/api/me').then(res => res.json()).then(data => setUserRole(data.role));
+  useEffect(() => {
+    if (!supabase || !userRole) return;
 
-    const channel = supabase.channel('sync_room');
+    const channel = supabase.channel(`celeb-realtime-${userRole}`);
+
+    // 1. DAFTARKAN SEMUA HANDLER SEBELUM SUBSCRIBE
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        const pRole = userRole === 'cowo' ? 'cewe' : 'cowo';
-        const isOnline = !!state[pRole];
+        const partnerRole = userRole === 'cowo' ? 'cewe' : 'cowo';
+        const isOnline = Object.values(state).some((presences: any) => 
+          presences.some((p: any) => p.role === partnerRole)
+        );
         setPartnerOnline(isOnline);
-
-        if (isAnniv && isOnline && step === 'idle') {
-           setTimeout(() => startSequence(), 1000);
+      })
+      .on('broadcast', { event: 'celebration_invitation' }, ({ payload }) => {
+        if (payload.role !== userRole && step === 'idle') {
+           console.log("Pasangan sudah mulai merayakan!");
         }
       })
-      .on('broadcast', { event: 'partner_wish' }, ({ payload }) => {
-        setPartnerWish(payload.wish);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED' && userRole) {
-          await channel.track({ online_at: new Date().toISOString() });
-        }
+      .on('broadcast', { event: 'wish_submitted' }, ({ payload }) => {
+          if (payload.role !== userRole) setPartnerWish(payload.text);
       });
 
-    return () => { channel.unsubscribe(); };
-  }, [shouldShow, userRole, step, isAnniv]);
-
-  useEffect(() => {
-    if (step === 'showcase' && finalAiMessage && !showcaseTypingDone) {
-      setDisplayedText(''); // Reset displayed text for new message
-      setIsTyping(true);
-      let i = 0;
-      const interval = setInterval(() => {
-        i++;
-        setDisplayedText(finalAiMessage.slice(0, i));
-        if (i >= finalAiMessage.length) {
-          clearInterval(interval);
-          setIsTyping(false);
-          setShowcaseTypingDone(true);
-          setTimeout(() => setStep('completed'), 15000);
-        }
-      }, 40);
-      return () => clearInterval(interval);
-    }
-  }, [step, finalAiMessage, showcaseTypingDone]);
-
-  useEffect(() => {
-    if (step === 'showcase' && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [displayedText, step]);
-
-  const generateIntro = async () => {
-    setIntroAiMessage('');
-    setIsLoading(true);
-    setIntroTypingDone(false);
-    const contextStr = isAnniv 
-      ? `BUAT INTRO ANNIV: Hari ini Anniversary ke-${status?.years}. Buat kata-kata pembuka yang sangat puitis, kaget waktu cepat berlalu, penuh haru, dan menyentuh hati. Gunakan sapaan romantis. Max 35 kata.`
-      : `BUAT INTRO ULTAH: Hari ini Ulang Tahun ke-${status?.years} untuk ${status?.name}. Buat kata-kata kaget dia sudah bertambah dewasa, penuh syukur, dan sangat kagum padanya. Gunakan sapaan romantis dan kata "kamu". Max 35 kata.`;
-
-    const res = await fetch('/api/ai/message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: isAnniv ? 'Sayang' : status?.name,
-        context: contextStr,
-        maxWords: 50
-      }),
+    // 2. BARU SUBSCRIBE
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ role: userRole, joined_at: new Date().toISOString() });
+      }
     });
-    const data = await res.json();
-    setIntroAiMessage(data.text);
-    setIsLoading(false);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userRole, step]);
+
+  const startSequence = async () => {
+    setStep('intro');
+    fetch('/api/celebrate/notify', { method: 'POST', body: JSON.stringify({ action: 'celebration_started', senderRole: userRole }) });
+    
+    // Broadcast via default channel
+    supabase?.channel('celeb-broadcast').send({
+        type: 'broadcast',
+        event: 'celebration_invitation',
+        payload: { role: userRole }
+    });
+
+    await generateIntro();
+    const audioUrl = isAnniv ? '/audio/anniversary.mp3' : '/audio/birthday.mp3';
+    audioRef.current = new Audio(audioUrl);
+    audioRef.current.loop = true;
+    try { await audioRef.current.play(); } catch (e) { }
+    confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
   };
 
   useEffect(() => {
     if (step === 'intro' && introAiMessage && !introTypingDone) { 
-      setIntroText(''); 
-      setIsTyping(true);
+      setIntroText(''); setIsTyping(true);
       let i = 0;
       const interval = setInterval(() => {
-        i++;
-        setIntroText(introAiMessage.slice(0, i));
-        if (i >= introAiMessage.length) {
-          clearInterval(interval);
-          setIsTyping(false); 
-          setIntroTypingDone(true);
-        }
+        i++; setIntroText(introAiMessage.slice(0, i));
+        if (i >= introAiMessage.length) { clearInterval(interval); setIsTyping(false); setIntroTypingDone(true); }
       }, 60); 
       return () => clearInterval(interval);
     }
   }, [step, introAiMessage, introTypingDone]);
 
+  useEffect(() => {
+    if (step === 'showcase' && finalAiMessage && !showcaseTypingDone) {
+      setDisplayedText(''); setIsTyping(true);
+      let i = 0;
+      const interval = setInterval(() => {
+        i++; setDisplayedText(finalAiMessage.slice(0, i));
+        if (i >= finalAiMessage.length) { clearInterval(interval); setIsTyping(false); setShowcaseTypingDone(true); setTimeout(() => setStep('completed'), 15000); }
+      }, 40);
+      return () => clearInterval(interval);
+    }
+  }, [step, finalAiMessage, showcaseTypingDone]);
 
-  const startSequence = async () => {
-    setStep('intro'); // Pindah ke intro dulu agar muncul loading state
-    await generateIntro(); // Baru fetch AI
-    // Play Audio (dipindah ke sini agar bisa dimainkan saat intro sudah muncul)
-    const audioUrl = status?.type === 'anniversary' ? '/audio/anniversary.mp3' : '/audio/birthday.mp3';
-    audioRef.current = new Audio(audioUrl);
-    audioRef.current.loop = true;
-    try { await audioRef.current.play(); } catch (e) { console.warn("Audio blocked", e); }
-
-    confetti({
-      particleCount: 200,
-      spread: 100,
-      origin: { y: 0.5 },
-      colors: ['#FF69B4', '#FFD700', '#F5F0EB']
+  const generateIntro = async () => {
+    setIntroAiMessage(''); setIsLoading(true);
+    const res = await fetch('/api/ai/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: isAnniv ? 'Sayang' : status?.name, context: isAnniv ? 'ANNIV' : 'ULTAH', maxWords: 50 }),
     });
+    const data = await res.json();
+    setIntroAiMessage(data.text); setIsLoading(false);
   };
 
-  const callPartner = async () => {
-    await fetch('/api/celebrate/notify', {
+  const generateFinalShowcase = async () => {
+    setFinalAiMessage(''); setIsLoading(true);
+    const res = await fetch('/api/ai/message', {
       method: 'POST',
-      body: JSON.stringify({ action: 'call_partner', senderRole: userRole })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: isAnniv ? 'Sayang' : status?.name, context: 'SURAT CINTA FINAL', maxWords: 200 }),
     });
-    alert('Notifikasi panggilan sudah dikirim ke Telegram! ✨');
+    const data = await res.json();
+    setFinalAiMessage(data.text); setStep('showcase'); setIsLoading(false);
   };
 
   const submitWish = async () => {
     if (!wishInput.trim()) return;
-    
-    // Simpan wish ke Supabase (atau localStorage jika tidak ada Supabase)
-    // if (supabase) { ... } // Implementasi nanti
-
-    // Kirim wish ke pasangan via broadcast
+    setIsLoading(true);
     if (isAnniv) {
-      supabase?.channel('sync_room').send({
-        type: 'broadcast',
-        event: 'partner_wish',
-        payload: { wish: wishInput }
-      });
-
-      if (!partnerWish) {
-        setIsLoading(true);
-        return;
-      }
+      supabase?.channel('celeb-broadcast').send({ type: 'broadcast', event: 'wish_submitted', payload: { role: userRole, text: wishInput } });
+      if (!partnerWish) { setStep('waiting_partner'); return; }
     }
-    
-    // Kirim notifikasi ke Telegram
-    fetch('/api/celebrate/notify', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'wish_submitted', senderRole: userRole })
-    });
-    
+    fetch('/api/celebrate/notify', { method: 'POST', body: JSON.stringify({ action: 'wish_submitted', senderRole: userRole }) });
     generateFinalShowcase();
   };
-
-  useEffect(() => {
-    if (step === 'wish' && isAnniv && partnerWish && wishInput && isLoading) {
-      generateFinalShowcase();
-    }
-  }, [partnerWish, isAnniv, wishInput, isLoading]);
-
-  const generateFinalShowcase = async () => {
-    setFinalAiMessage('');
-    setIsLoading(true);
-    const combinedWishes = isAnniv 
-      ? `Wish dari aku: "${wishInput}" dan wish dari pasanganku: "${partnerWish}"`
-      : `Wish hari ini: "${wishInput}"`;
-
-    const contextStr = isAnniv
-      ? `SURAT CINTA ANNIV: Rayakan Anniversary ke-${status?.years}. Sapaan romantis, masukkan elemen wish ini: ${combinedWishes}. Tulis surat puitis sangat panjang (min 150 kata), emosional, banyak doa 'Semoga...'. Akhiri dengan 'Happy Anniversary Sayang'.`
-      : `SURAT CINTA ULTAH: Rayakan Ulang Tahun ke-${status?.years} untuk ${status?.name}. Sapaan romantis, masukkan elemen wish ini: ${combinedWishes}. Tulis surat puitis sangat panjang (min 150 kata), emosional, banyak doa 'Semoga...'. Akhiri dengan 'Happy Birthday Sayang'.`;
-
-    const res = await fetch('/api/ai/message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: isAnniv ? 'Sayang' : status?.name,
-        context: contextStr,
-        maxWords: 200
-      }),
-    });
-    const data = await res.json();
-    setFinalAiMessage(data.text);
-    
-    setShowcaseTypingDone(false);
-    setStep('showcase');
-    setIsLoading(false);
-  };
-
-  const targetName = status?.type === 'birthday' ? (status as any).name : 'Kita';
 
   if (!shouldShow) return null;
 
   return (
-    <div className="relative">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center overflow-hidden bg-bucin-bg/95 backdrop-blur-xl">
       <AnimatePresence>
-        {step !== 'completed' && (
-          <motion.div className="fixed inset-0 z-[9999] bg-[#030303] overflow-hidden flex items-center justify-center px-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {partnerOnline && <PresenceSilhouette role={userRole === 'cowo' ? 'cewe' : 'cowo'} />}
-
-            <AnimatePresence mode="wait">
-              {step === 'idle' && (
-                <motion.div key="idle" className="text-center" initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
-                  <h2 className="glow-pink text-4xl md:text-6xl font-bold text-bucin-pink mb-10">Momen Indah Menanti... ✨</h2>
-                  <div className="flex flex-col gap-4">
-                    <button onClick={startSequence} className="rounded-full bg-gradient-to-r from-bucin-pink to-bucin-rose px-12 py-5 text-xl font-bold text-white shadow-2xl hover:scale-105 transition-transform">Buka Kejutan 💖</button>
-                    {!isAnniv && !partnerOnline && (
-                      <button onClick={callPartner} className="text-bucin-gold text-sm underline opacity-70">Panggil pasangan untuk melihat ini bersama ➔</button>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 'waiting_partner' && (
-                <motion.div key="waiting" className="text-center max-w-lg" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <div className="mb-8 flex justify-center"><span className="relative flex h-12 w-12"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-bucin-pink opacity-75"></span><span className="relative inline-flex rounded-full h-12 w-12 bg-bucin-pink"></span></span></div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Menunggu Pasanganmu...</h3>
-                  <p className="text-bucin-textSecondary leading-relaxed">Khusus Anniversary, perayaan ini akan jauh lebih indah jika dibuka bersama-sama. <br/>Minta dia buka web ini sekarang ya! ✨</p>
-                  {partnerOnline && <button onClick={generateIntro} className="mt-8 text-bucin-gold font-bold animate-bounce">Dia sudah online! Klik untuk Mulai ➔</button>}
-                </motion.div>
-              )}
-
-              {step === 'intro' && (
-                <motion.div key="intro" className="text-center max-w-3xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                   <div className="text-3xl md:text-5xl font-serif italic text-white leading-relaxed glow-pink">
-                      {!introAiMessage ? 'Meresapi waktu...' : (
-                        <>
-                          “{introText}
-                          <span className={`inline-block w-[3px] h-[0.8em] bg-bucin-pink ml-1 ${isTyping ? 'opacity-100' : 'animate-pulse'}`}></span>
-                          ”
-                        </>
-                      )}
-                   </div>
-                   {introAiMessage && introTypingDone && (
-                     <button onClick={() => setStep('wish')} className="mt-12 rounded-xl border border-white/20 px-8 py-3 text-white/60">Lanjutkan ➔</button>
-                   )}
-                </motion.div>
-              )}
-
-              {step === 'wish' && (
-                <motion.div key="wish" className="w-full max-w-xl text-center" initial={{ y: 20 }} animate={{ y: 0 }}>
-                   <h3 className="text-3xl font-bold text-bucin-pink mb-10 glow-pink">
-                      {isAnniv ? 'Satu Doa untuk Kita Berdua...' : `Satu Doa untukmu, ${targetName}...`}
-                   </h3>
-                   <textarea value={wishInput} onChange={(e) => setWishInput(e.target.value)} placeholder="Tuliskan harapanmu..." className="w-full h-44 rounded-3xl border-2 border-white/10 bg-white/5 p-8 text-xl text-white outline-none focus:border-bucin-pink transition-all resize-none" />
-                   <button onClick={submitWish} disabled={isLoading} className="mt-8 w-full rounded-2xl bg-bucin-pink py-5 text-xl font-bold text-white shadow-xl">
-                      {isLoading ? (isAnniv ? 'Menunggu Doa Pasangan...' : 'Merangkai Doa...') : 'Kirim Doa ✨'}
-                   </button>
-                   {isAnniv && partnerWish && <p className="mt-4 text-sm text-bucin-gold animate-pulse">✨ Pasanganmu sudah mengirim doanya!</p>}
-                </motion.div>
-              )}
-
-              {step === 'showcase' && (
-                <motion.div key="showcase" className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-20 overflow-hidden">
-                   <div className="absolute inset-0 z-10 opacity-40"><FallingMemories /></div>
-                   <div ref={scrollRef} className="z-20 text-center max-w-4xl max-h-[80vh] overflow-y-auto custom-scrollbar pr-4 scroll-smooth">
-                      <div className="text-2xl md:text-4xl font-serif italic text-white leading-relaxed glow-pink">
-                        {!finalAiMessage ? 'Meresapi doa...' : (
-                          <>
-                            {displayedText}
-                            <span className={`inline-block w-[3px] h-[0.8em] bg-bucin-pink ml-2 ${isTyping ? 'opacity-100' : 'animate-pulse'}`}></span>
-                          </>
-                        )}
-                      </div>
-                      {!isTyping && finalAiMessage && <div className="mt-12 animate-bounce text-4xl">{isAnniv ? '💑🥂💖' : '🎈🎂🎉'}</div>}
-                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+        {partnerOnline && (
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="fixed top-10 left-1/2 -translate-x-1/2 z-[600] flex items-center gap-2 rounded-full bg-white/10 border border-white/10 px-4 py-1.5 backdrop-blur-md">
+                <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">{partnerName} sedang melihat ini... ✨</span>
+            </motion.div>
         )}
       </AnimatePresence>
-
-      {step === 'completed' && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[50]">
-          <button onClick={() => { 
-            setStep('idle'); 
-            setIntroAiMessage(''); 
-            setFinalAiMessage(''); 
-            setIntroTypingDone(false); 
-            setShowcaseTypingDone(false); 
-          }} className="card-bucin px-8 py-3 font-bold text-bucin-pink">Putar Ulang Rekaman 💫</button>
-        </div>
-      )}
+      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6">
+        <AnimatePresence mode="wait">
+          {step === 'idle' && (
+            <motion.div key="idle" className="text-center space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="animate-pulse text-6xl md:text-8xl">🎁</div>
+              <h2 className="glow-gold text-3xl md:text-5xl font-bold text-bucin-gold">Ada Kejutan Untukmu...</h2>
+              <button onClick={startSequence} className="rounded-2xl bg-bucin-pink px-10 py-4 text-xl font-bold text-white shadow-lg shadow-bucin-pink/20 hover:scale-110 transition-transform">Buka Sekarang ✨</button>
+            </motion.div>
+          )}
+          {step === 'waiting_partner' && (
+            <motion.div key="waiting" className="text-center space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-bucin-gold border-t-transparent" />
+              <p className="text-xl text-white italic">Menunggu pasanganmu mengirimkan doanya juga...</p>
+              {partnerOnline && <p className="text-sm text-bucin-gold animate-bounce">Dia sedang online! Sebentar lagi...</p>}
+            </motion.div>
+          )}
+          {step === 'intro' && (
+            <motion.div key="intro" className="text-center max-w-3xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+               <div className="text-3xl md:text-5xl font-serif italic text-white leading-relaxed glow-pink">
+                  {!introAiMessage ? 'Meresapi waktu...' : (<>“{introText}<span className={`inline-block w-[3px] h-[0.7em] bg-bucin-pink ml-1 ${isTyping ? 'opacity-100' : 'animate-pulse'}`}></span>”</>)}
+               </div>
+               {introAiMessage && introTypingDone && (<button onClick={() => setStep('wish')} className="mt-12 rounded-xl border border-white/20 px-8 py-3 text-white/60">Lanjutkan ➔</button>)}
+            </motion.div>
+          )}
+          {step === 'wish' && (
+            <motion.div key="wish" className="w-full max-w-xl text-center space-y-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <h3 className="text-3xl font-bold text-white">{isAnniv ? 'Tulis Doa untuk Kita' : `Tulis Doa untuk ${status?.name}`}</h3>
+              <textarea value={wishInput} onChange={e => setWishInput(e.target.value)} className="w-full h-40 rounded-3xl bg-white/5 border border-white/10 p-6 text-white outline-none focus:border-bucin-pink text-lg" placeholder="Tulis harapan terdalammu di sini..." />
+              <button onClick={submitWish} disabled={isLoading || !wishInput.trim()} className="w-full rounded-2xl bg-bucin-gold py-4 text-xl font-bold text-bucin-bg disabled:opacity-50">{isLoading ? 'Mengirim doa...' : 'Kirim Doa 💖'}</button>
+            </motion.div>
+          )}
+          {step === 'showcase' && (
+            <motion.div key="showcase" className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-20 overflow-hidden">
+               <div className="absolute inset-0 z-10 opacity-40"><FallingMemories /></div>
+               <div ref={scrollRef} className="z-20 text-center max-w-4xl max-h-[80vh] overflow-y-auto custom-scrollbar pr-4 scroll-smooth">
+                  <div className="text-2xl md:text-4xl font-serif italic text-white leading-relaxed glow-pink">
+                    {!finalAiMessage ? 'Meresapi doa...' : <>{displayedText}<span className={`inline-block w-[3px] h-[0.7em] bg-bucin-pink ml-2 ${isTyping ? 'opacity-100' : 'animate-pulse'}`}></span></>}
+                  </div>
+                  {!isTyping && finalAiMessage && <div className="mt-12 animate-bounce text-4xl">{isAnniv ? '💑🥂💖' : '🎈🎂🎉'}</div>}
+               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

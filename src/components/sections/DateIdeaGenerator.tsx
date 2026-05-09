@@ -15,7 +15,7 @@ type AIResult = {
   closing: string;
 };
 
-export function DateIdeaGenerator(): JSX.Element {
+export function DateIdeaGenerator() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AIResult | null>(null);

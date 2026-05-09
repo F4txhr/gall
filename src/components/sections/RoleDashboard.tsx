@@ -11,7 +11,7 @@ type RoleDashboardProps = {
   role: 'cowo' | 'cewe';
 };
 
-export function RoleDashboard({ role }: RoleDashboardProps): JSX.Element {
+export function RoleDashboard({ role }: RoleDashboardProps) {
   const router = useRouter();
   const [partnerOnline, setPartnerOnline] = useState(false);
   const [myLocation, setMyLocation] = useState('');
@@ -26,6 +26,7 @@ export function RoleDashboard({ role }: RoleDashboardProps): JSX.Element {
     if (!supabase) return;
 
     const fetchMySettings = async () => {
+      if (!supabase) return;
       const { data } = await supabase.from('settings').select('key, value');
       
       const locKey = role === 'cowo' ? 'partner_a_location' : 'partner_b_location';

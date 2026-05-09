@@ -42,7 +42,7 @@ function CompactCard({ title, date, label }: { title: string; date: string; labe
     <div className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-5 transition-all hover:bg-white/[0.06]">
       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-bucin-gold/60">{label}</span>
       <h3 className="mt-1 text-lg font-bold text-white">{title}</h3>
-      <p className="mt-1 text-[11px] text-bucin-textSecondary">Target: {formattedDate}</p>
+      <p className="mt-1 text-[11px] text-bucin-textSecondary">{formattedDate}</p>
       
       <div className="mt-4 flex items-baseline gap-1 font-mono">
         <span className="text-2xl font-bold text-bucin-pink">{timeLeft.days}</span>
@@ -60,6 +60,9 @@ function CompactCard({ title, date, label }: { title: string; date: string; labe
 
 export function CountdownTabs({ config }: { config?: any }): JSX.Element {
   const settings = config || relationshipConfig;
+
+  // Jika nama belum ada, jangan tampilkan countdown dulu agar tidak aneh
+  if (!settings.partnerA || !settings.partnerB) return <></>;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

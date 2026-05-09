@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
-export function Hero(): JSX.Element {
+export function Hero() {
   return (
     <section className="flex min-h-screen flex-col items-center justify-center bg-bucin-bg px-6 text-center text-bucin-text">
       <motion.h1
